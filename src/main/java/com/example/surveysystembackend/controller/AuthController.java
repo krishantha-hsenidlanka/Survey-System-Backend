@@ -9,7 +9,7 @@ import com.example.surveysystembackend.model.User;
 import com.example.surveysystembackend.repository.RoleRepository;
 import com.example.surveysystembackend.repository.UserRepository;
 import com.example.surveysystembackend.security.jwt.JwtUtils;
-import com.example.surveysystembackend.service.UserDetailsImpl;
+import com.example.surveysystembackend.service.user.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequestMapping("/")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired

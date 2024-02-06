@@ -1,4 +1,4 @@
-package com.example.surveysystembackend.service;
+package com.example.surveysystembackend.service.user;
 
 
 import com.example.surveysystembackend.model.User;
@@ -35,4 +35,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return UserDetailsImpl.build(user);
 
     }
+
+
 }

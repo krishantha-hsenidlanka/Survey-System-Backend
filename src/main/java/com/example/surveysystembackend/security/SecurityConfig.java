@@ -5,7 +5,7 @@ package com.example.surveysystembackend.security;
 import com.example.surveysystembackend.security.jwt.AuthEntryPointJwt;
 import com.example.surveysystembackend.security.jwt.JwtTokenFilter;
 import com.example.surveysystembackend.security.jwt.JwtUtils;
-import com.example.surveysystembackend.service.UserDetailsServiceImpl;
+import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

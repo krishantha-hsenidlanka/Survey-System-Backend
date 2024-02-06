@@ -1,6 +1,6 @@
 package com.example.surveysystembackend.security.jwt;
 
-import com.example.surveysystembackend.service.UserDetailsServiceImpl;
+import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +34,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             log.info("JWT: " + jwt);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                
+
                 String username = jwtUtils.getUsernameFromJwtToken(jwt);
                 log.info("Username from token: " + username);
 

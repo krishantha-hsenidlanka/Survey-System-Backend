@@ -1,6 +1,6 @@
 package com.example.surveysystembackend.security.jwt;
 
-import com.example.surveysystembackend.service.UserDetailsImpl;
+import com.example.surveysystembackend.service.user.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;

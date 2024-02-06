@@ -1,4 +1,4 @@
-package com.example.surveysystembackend.service;
+package com.example.surveysystembackend.service.user;
 
 
 import com.example.surveysystembackend.model.User;

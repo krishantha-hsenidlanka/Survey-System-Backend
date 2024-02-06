@@ -11,6 +11,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,4 +41,12 @@ public class User {
 
     @DBRef
     private Set<Role> roles = new HashSet<>();
+
+    // implement below features
+
+//    private boolean enabled;
+//
+//    private Date registrationDate;
+
+
 }
