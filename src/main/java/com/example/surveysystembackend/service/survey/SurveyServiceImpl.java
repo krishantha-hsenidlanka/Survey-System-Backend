@@ -123,6 +123,15 @@ public class SurveyServiceImpl implements SurveyService {
                 .orElse(null);
     }
 
+
+    @Override
+    public List<SurveyDTO> getSurveysByOwnerId(String ownerId) {
+        List<Survey> surveysByOwnerId = surveyRepository.findByOwnerId(ownerId);
+        return surveysByOwnerId.stream()
+                .map(survey -> modelMapper.map(survey, SurveyDTO.class))
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<SurveyDTO> getAllSurveys() {
         List<Survey> allSurveys = surveyRepository.findAll();

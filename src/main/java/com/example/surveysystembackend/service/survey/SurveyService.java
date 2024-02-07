@@ -11,6 +11,8 @@ public interface SurveyService {
     SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO);
 
     List<SurveyDTO> getAllSurveys();
+    List<SurveyDTO> getSurveysByOwnerId(String ownerId);
+
     boolean deleteSurvey(String surveyId);
 
 }

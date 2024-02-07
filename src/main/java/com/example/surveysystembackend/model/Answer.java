@@ -1,11 +1,13 @@
 package com.example.surveysystembackend.model;
 
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 
+import java.util.List;
+
+@Data
 public class Answer {
     @Id
-    private String id;
     private String questionId;
-    private String text;
-    private String userId;
+    private List<String> text;
 }

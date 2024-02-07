@@ -47,6 +47,13 @@ public class SurveyController {
         }
     }
 
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<SurveyDTO>> getSurveysByOwnerId(@PathVariable String ownerId) {
+        List<SurveyDTO> surveysByOwnerId = surveyService.getSurveysByOwnerId(ownerId);
+        return ResponseEntity.ok(surveysByOwnerId);
+    }
+
+
     @GetMapping
     public ResponseEntity<List<SurveyDTO>> getAllSurveys() {
         List<SurveyDTO> allSurveys = surveyService.getAllSurveys();

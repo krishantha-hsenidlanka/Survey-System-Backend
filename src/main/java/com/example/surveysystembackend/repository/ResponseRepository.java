@@ -1,16 +1,15 @@
 package com.example.surveysystembackend.repository;
 
 import com.example.surveysystembackend.model.Response;
-import com.example.surveysystembackend.model.Survey;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface SurveyRepository extends MongoRepository<Survey, String> {
+public interface ResponseRepository extends MongoRepository<Response, String> {
+    List<Response> findBySurveyId(String surveyId);
+    List<Response> findByUserId(String userId);
 
-    List<Survey> findByOwnerId(String ownerId);
 
 }
-
