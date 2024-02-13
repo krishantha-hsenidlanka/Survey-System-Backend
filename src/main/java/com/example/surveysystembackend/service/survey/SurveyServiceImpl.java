@@ -1,10 +1,9 @@
 package com.example.surveysystembackend.service.survey;
 
 import com.example.surveysystembackend.DTO.SurveyDTO;
-import com.example.surveysystembackend.model.Question;
+import com.example.surveysystembackend.model.Element;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.SurveyRepository;
-import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -33,22 +32,22 @@ public class SurveyServiceImpl implements SurveyService {
         // Map SurveyDTO to Survey entity
         Survey survey = modelMapper.map(surveyDTO, Survey.class);
 
-        // Map QuestionDTOs to Question entities with unique identifiers
-        List<Question> questions = modelMapper.map(surveyDTO.getQuestions(), new TypeToken<List<Question>>() {}.getType());
+        // Map QuestionDTOs to Element entities with unique identifiers
+        List<Element> elements = modelMapper.map(surveyDTO.getElements(), new TypeToken<List<Element>>() {}.getType());
 
         // Ensure each question has a unique identifier
-        questions.forEach(question -> question.setId(UUID.randomUUID().toString()));
+        elements.forEach(element -> element.setId(UUID.randomUUID().toString()));
 
-        // Set the questions in the survey entity
-        survey.setQuestions(questions);
+        // Set the elements in the survey entity
+        survey.setQuestions(elements);
 
         // Set the owner ID from the currently authenticated user
         String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
         survey.setOwnerId(ownerId);
 
         // Initialize the list if it's not provided in the SurveyDTO
-        if (questions != null) {
-            survey.setQuestions(questions);
+        if (elements != null) {
+            survey.setQuestions(elements);
         } else {
             survey.setQuestions(new ArrayList<>());
         }
@@ -92,16 +91,16 @@ public class SurveyServiceImpl implements SurveyService {
         // Map updated survey DTO to the existing survey entity
         modelMapper.map(updatedSurveyDTO, existingSurvey);
 
-        // Map updated QuestionDTOs to Question entities with unique identifiers
-        List<Question> updatedQuestions = modelMapper.map(updatedSurveyDTO.getQuestions(), new TypeToken<List<Question>>() {}.getType());
-        if (updatedQuestions != null) {
+        // Map updated QuestionDTOs to Element entities with unique identifiers
+        List<Element> updatedElements = modelMapper.map(updatedSurveyDTO.getElements(), new TypeToken<List<Element>>() {}.getType());
+        if (updatedElements != null) {
             // Ensure each updated question has a unique identifier
-            updatedQuestions.forEach(question -> {
-                if (question.getId() == null) {
-                    question.setId(UUID.randomUUID().toString());
+            updatedElements.forEach(element -> {
+                if (element.getId() == null) {
+                    element.setId(UUID.randomUUID().toString());
                 }
             });
-            existingSurvey.setQuestions(updatedQuestions);
+            existingSurvey.setQuestions(updatedElements);
         } else {
             // If no questions provided in the updated survey, set it to an empty list
             existingSurvey.setQuestions(new ArrayList<>());

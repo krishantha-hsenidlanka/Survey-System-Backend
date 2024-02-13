@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class QuestionDTO {
+public class ElementDTO {
     private String id;
     private String text;
     private String type;

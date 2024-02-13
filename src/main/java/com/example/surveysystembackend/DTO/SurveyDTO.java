@@ -14,7 +14,7 @@ import java.util.List;
 public class SurveyDTO {
     private String id;
     private String title;
-    private List<QuestionDTO> questions;
+    private List<ElementDTO> elements;
     private String ownerId;
     private boolean isPublic;
     private boolean deleted;
