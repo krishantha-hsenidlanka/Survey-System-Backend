@@ -13,6 +13,9 @@ public interface SurveyService {
     List<SurveyDTO> getAllSurveys();
     List<SurveyDTO> getSurveysByOwnerId(String ownerId);
 
+    List<SurveyDTO> getSurveysForLoggedInUser();
+
+
     boolean deleteSurvey(String surveyId);
 
 }

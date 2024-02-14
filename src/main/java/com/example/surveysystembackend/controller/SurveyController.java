@@ -55,6 +55,13 @@ public class SurveyController {
         }
     }
 
+    @GetMapping("/user")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<SurveyDTO>> getSurveysForLoggedInUser() {
+        List<SurveyDTO> surveysForLoggedInUser = surveyService.getSurveysForLoggedInUser();
+        return ResponseEntity.ok(surveysForLoggedInUser);
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<List<SurveyDTO>> getSurveysByOwnerId(@PathVariable String ownerId) {
         List<SurveyDTO> surveysByOwnerId = surveyService.getSurveysByOwnerId(ownerId);

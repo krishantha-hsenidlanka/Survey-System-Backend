@@ -181,6 +181,17 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
+    public List<SurveyDTO> getSurveysForLoggedInUser() {
+        // Get the authenticated user ID
+        String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        List<Survey> surveysByOwnerId = surveyRepository.findByOwnerId(ownerId);
+        return surveysByOwnerId.stream()
+                .map(survey -> modelMapper.map(survey, SurveyDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<SurveyDTO> getAllSurveys() {
         List<Survey> allSurveys = surveyRepository.findAll();
         return allSurveys.stream()
