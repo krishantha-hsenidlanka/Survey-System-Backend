@@ -123,9 +123,13 @@ public class SurveyServiceImpl implements SurveyService {
         // Map updated QuestionDTOs to Element entities with unique identifiers
         List<Element> updatedElements = updatedSurveyDTO.getPages().stream()
                 .flatMap(pageDTO -> pageDTO.getElements().stream()
+                        .filter(elementDTO -> elementDTO != null) // Filter out null elements
                         .map(elementDTO -> {
                             Element element = modelMapper.map(elementDTO, Element.class);
-                            element.setChoices(modelMapper.map(elementDTO.getChoices(), new TypeToken<List<Choice>>() {}.getType()));
+                            if (elementDTO.getChoices() != null) {
+                                element.setChoices(elementDTO.getChoices());
+                            }
+                            element.setId(UUID.randomUUID().toString());
                             return element;
                         })
                         .peek(element -> {
@@ -135,6 +139,7 @@ public class SurveyServiceImpl implements SurveyService {
                         })
                 )
                 .collect(Collectors.toList());
+
 
         if (updatedElements != null) {
             existingSurvey.setPages(updatedSurveyDTO.getPages().stream()
