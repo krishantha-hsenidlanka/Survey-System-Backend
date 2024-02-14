@@ -2,9 +2,11 @@ package com.example.surveysystembackend.controller;
 
 import com.example.surveysystembackend.DTO.SurveyDTO;
 import com.example.surveysystembackend.service.survey.SurveyService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,10 +23,16 @@ public class SurveyController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<SurveyDTO> createSurvey(@RequestBody SurveyDTO surveyDTO) {
+    public ResponseEntity<?> createSurvey(@RequestBody @Valid SurveyDTO surveyDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            // Validation errors occurred
+            return ResponseEntity.badRequest().body("Validation errors: " + bindingResult.getAllErrors());
+        }
+
         SurveyDTO createdSurvey = surveyService.createSurvey(surveyDTO);
         return ResponseEntity.ok(createdSurvey);
     }
+
 
     @GetMapping("/{surveyId}")
     public ResponseEntity<SurveyDTO> getSurveyById(@PathVariable String surveyId) {

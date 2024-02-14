@@ -5,17 +5,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ElementDTO {
-    private String id;
-    private String type;
+public class PageDTO {
     private String name;
     private String title;
-    private List<Object> choices;
-    private Boolean isRequired;
-    private String imageFit;
+    private String description;
+    private List<ElementDTO> elements;
 }

@@ -9,6 +9,4 @@ public interface ResponseService {
     ResponseDTO getResponseById(String responseId);
     List<ResponseDTO> getResponsesBySurveyId(String surveyId);
     List<ResponseDTO> getResponsesByUserId(String userId);
-
-
 }

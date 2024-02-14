@@ -33,7 +33,6 @@ public class ResponseServiceImpl implements ResponseService {
         this.surveyRepository = surveyRepository;
     }
 
-
     @Override
     public ResponseDTO createResponse(ResponseDTO responseDTO) {
         // Map ResponseDTO to Response entity
@@ -57,8 +56,6 @@ public class ResponseServiceImpl implements ResponseService {
         return modelMapper.map(response, ResponseDTO.class);
     }
 
-
-
     @Override
     public ResponseDTO getResponseById(String responseId) {
         Optional<Response> optionalResponse = responseRepository.findById(responseId);
@@ -72,7 +69,6 @@ public class ResponseServiceImpl implements ResponseService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public List<ResponseDTO> getResponsesByUserId(String userId) {
         List<Response> responsesByUserId = responseRepository.findByUserId(userId);
@@ -80,6 +76,7 @@ public class ResponseServiceImpl implements ResponseService {
                 .map(response -> modelMapper.map(response, ResponseDTO.class))
                 .collect(Collectors.toList());
     }
+
     private boolean isValidSurveyAndQuestions(String surveyId, List<Answer> answers) {
         Optional<Survey> surveyOptional = surveyRepository.findById(surveyId);
 
@@ -93,12 +90,14 @@ public class ResponseServiceImpl implements ResponseService {
 
             // Validate question IDs
             return answers.stream()
-                    .allMatch(answer -> survey.getQuestions().stream()
+                    .allMatch(answer -> survey.getPages().stream()
+                            .flatMap(page -> page.getElements().stream())
                             .anyMatch(question -> question.getId().equals(answer.getQuestionId())));
         }
 
         return false;
     }
+
 
     private String getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();

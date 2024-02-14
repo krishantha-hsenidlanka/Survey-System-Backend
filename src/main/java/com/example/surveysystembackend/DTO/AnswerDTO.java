@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public class AnswerDTO {
     private String questionId;
-    private List<String> text;
+    private Object value;
 }

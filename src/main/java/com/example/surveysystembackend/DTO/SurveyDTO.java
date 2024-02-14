@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -14,8 +15,10 @@ import java.util.List;
 public class SurveyDTO {
     private String id;
     private String title;
-    private List<ElementDTO> elements;
+    private String description;
+    private List<PageDTO> pages;
     private String ownerId;
+    private Set<String> editAccessUserIds;
     private boolean isPublic;
     private boolean deleted;
 }
