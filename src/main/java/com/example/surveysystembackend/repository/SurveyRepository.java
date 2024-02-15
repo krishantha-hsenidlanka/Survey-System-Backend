@@ -12,5 +12,8 @@ public interface SurveyRepository extends MongoRepository<Survey, String> {
 
     List<Survey> findByOwnerId(String ownerId);
 
+    List<Survey> findByOwnerIdAndDeletedFalse(String ownerId);
+
+
 }
 

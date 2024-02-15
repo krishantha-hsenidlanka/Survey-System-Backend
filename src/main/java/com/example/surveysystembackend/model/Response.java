@@ -19,5 +19,5 @@ public class Response {
     private String id;
     private String userId;
     private String surveyId;
-    private List<Answer> answers;
+    private List<Object> answers;
 }

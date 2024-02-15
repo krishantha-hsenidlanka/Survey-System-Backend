@@ -81,7 +81,7 @@ public class SurveyController {
         boolean deleted = surveyService.deleteSurvey(surveyId);
 
         if (deleted) {
-            return ResponseEntity.ok("Survey successfully deleted.");
+            return ResponseEntity.ok("{\"message\":\"Survey deleted successfully\"}");
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Survey not found or already deleted.");
         }

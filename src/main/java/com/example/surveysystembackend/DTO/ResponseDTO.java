@@ -15,5 +15,5 @@ public class ResponseDTO {
     private String id;
     private String userId;
     private String surveyId;
-    private List<AnswerDTO> answers;
+    private List<Object> answers;
 }
