@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RestController@RequestMapping("/")
+@RestController@RequestMapping("/api/")
 public class MainController {
     @GetMapping("/home")
     public String home() {
@@ -25,5 +25,11 @@ public class MainController {
     @PreAuthorize("hasRole('ADMIN')")
     public String manage() {
         return "This is manage page";
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String admin() {
+        return "{\"success\": true }";
     }
 }
