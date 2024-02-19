@@ -115,6 +115,7 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         // Set the owner ID in the updated survey DTO
+
         updatedSurveyDTO.setOwnerId(ownerId);
 
         // Map updated survey DTO to the existing survey entity
@@ -166,6 +167,7 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     public SurveyDTO getSurveyById(String surveyId) {
+
         return surveyRepository.findById(surveyId)
                 .map(survey -> modelMapper.map(survey, SurveyDTO.class))
                 .orElse(null);

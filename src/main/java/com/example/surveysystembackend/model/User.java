@@ -42,11 +42,10 @@ public class User {
     @DBRef
     private Set<Role> roles = new HashSet<>();
 
-    // implement below features
+    private boolean enabled;
 
-//    private boolean enabled;
-//
-//    private Date registrationDate;
+    private Date registrationDate;
+
 
 
 }
