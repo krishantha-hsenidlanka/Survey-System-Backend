@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,7 +36,7 @@ public class UserService {
                 .map(user -> modelMapper.map(user, UserDTO.class));
     }
 
-    public boolean updateUserDetails(String userId, UserDTO updatedUser) {
+        public boolean updateUserDetails(String userId, UserDTO updatedUser) {
         return userRepository.findById(userId)
                 .map(user -> {
                     // Map individual fields excluding null values
@@ -53,17 +54,26 @@ public class UserService {
                     }
 
                     if (updatedUser.getRoles() != null) {
-                        Set<ERole> roleNames = updatedUser.getRoles().stream()
-                                .map(ERole::valueOf)
-                                .collect(Collectors.toSet());
+                        Set<Role> roles = updatedUser.getRoles().stream()
+                                .map(roleName -> {
+                                    Optional<ERole> eRoleOptional = Arrays.stream(ERole.values())
+                                            .filter(role -> role.name().equals(roleName))
+                                            .findFirst();
 
-                        Set<Role> roles = roleNames.stream()
-                                .map(roleName -> roleRepository.findByName(roleName)
-                                        .orElseThrow(() -> new RuntimeException("Error: Role is not found.")))
+                                    if (eRoleOptional.isPresent()) {
+                                        return roleRepository.findByName(eRoleOptional.get())
+                                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                                    } else {
+                                        throw new RuntimeException("Error: Invalid role name - " + roleName);
+                                    }
+                                })
                                 .collect(Collectors.toSet());
 
                         user.setRoles(roles);
                     }
+
+
+
 
 
 

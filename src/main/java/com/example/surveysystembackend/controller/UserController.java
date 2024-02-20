@@ -5,12 +5,14 @@ import com.example.surveysystembackend.model.User;
 import com.example.surveysystembackend.service.user.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @PreAuthorize("hasRole('ADMIN')")
@@ -34,10 +36,12 @@ public class UserController {
 
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUserDetails(@PathVariable String userId, @Valid @RequestBody UserDTO updatedUser) {
+        log.info("Updating user details request");
         boolean success = userService.updateUserDetails(userId, updatedUser);
-        return success ? ResponseEntity.ok(new String("User details updated successfully!"))
+        return success ? ResponseEntity.ok("{\"message\":\"User details updated successfully!\"}")
                 : ResponseEntity.notFound().build();
     }
+
 
     @PutMapping("/{userId}/status")
     public ResponseEntity<?> updateUserStatus(@PathVariable String userId, @RequestParam boolean enabled) {
