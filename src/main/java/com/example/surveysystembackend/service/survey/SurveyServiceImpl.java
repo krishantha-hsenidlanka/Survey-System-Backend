@@ -115,45 +115,34 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         // Set the owner ID in the updated survey DTO
-
         updatedSurveyDTO.setOwnerId(ownerId);
 
         // Map updated survey DTO to the existing survey entity
         modelMapper.map(updatedSurveyDTO, existingSurvey);
 
         // Map updated QuestionDTOs to Element entities with unique identifiers
-        List<Element> updatedElements = updatedSurveyDTO.getPages().stream()
-                .flatMap(pageDTO -> pageDTO.getElements().stream()
-                        .filter(elementDTO -> elementDTO != null) // Filter out null elements
-                        .map(elementDTO -> {
-                            Element element = modelMapper.map(elementDTO, Element.class);
-                            if (elementDTO.getChoices() != null) {
-                                element.setChoices(elementDTO.getChoices());
-                            }
-                            element.setId(UUID.randomUUID().toString());
-                            return element;
-                        })
-                        .peek(element -> {
-                            if (element.getId() == null) {
+        List<Page> updatedPages = updatedSurveyDTO.getPages().stream()
+                .map(pageDTO -> {
+                    Page page = modelMapper.map(pageDTO, Page.class);
+
+                    List<Element> updatedElements = pageDTO.getElements().stream()
+                            .filter(elementDTO -> elementDTO != null) // Filter out null elements
+                            .map(elementDTO -> {
+                                Element element = modelMapper.map(elementDTO, Element.class);
+                                if (elementDTO.getChoices() != null) {
+                                    element.setChoices(elementDTO.getChoices());
+                                }
                                 element.setId(UUID.randomUUID().toString());
-                            }
-                        })
-                )
+                                return element;
+                            })
+                            .collect(Collectors.toList());
+
+                    page.setElements(updatedElements);
+                    return page;
+                })
                 .collect(Collectors.toList());
 
-
-        if (updatedElements != null) {
-            existingSurvey.setPages(updatedSurveyDTO.getPages().stream()
-                    .map(pageDTO -> {
-                        Page page = modelMapper.map(pageDTO, Page.class);
-                        page.setElements(updatedElements);
-                        return page;
-                    })
-                    .collect(Collectors.toList()));
-        } else {
-            // If no questions provided in the updated survey, set it to an empty list
-            existingSurvey.setPages(new ArrayList<>());
-        }
+        existingSurvey.setPages(updatedPages);
 
         // Save the updated survey to the repository
         existingSurvey.setId(surveyId);
@@ -162,6 +151,7 @@ public class SurveyServiceImpl implements SurveyService {
         // Map the updated survey entity back to a SurveyDTO for response
         return modelMapper.map(existingSurvey, SurveyDTO.class);
     }
+
 
 
 

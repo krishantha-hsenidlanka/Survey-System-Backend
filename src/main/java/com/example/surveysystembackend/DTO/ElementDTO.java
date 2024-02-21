@@ -17,5 +17,6 @@ public class ElementDTO {
     private String title;
     private List<Object> choices;
     private Boolean isRequired;
-    private String imageFit;
+    private List<Object> rows;
+    private List<Object> columns;
 }
