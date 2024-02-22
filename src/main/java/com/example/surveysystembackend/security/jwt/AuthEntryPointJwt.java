@@ -1,7 +1,7 @@
 package com.example.surveysystembackend.security.jwt;
 
 
-import com.example.surveysystembackend.DTO.ErrorResponseDTO;
+import com.example.surveysystembackend.DTO.Common.ErrorResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

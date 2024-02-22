@@ -1,4 +1,4 @@
-package com.example.surveysystembackend.DTO;
+package com.example.surveysystembackend.DTO.User;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

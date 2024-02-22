@@ -1,19 +1,17 @@
 package com.example.surveysystembackend.service.survey;
 
-import com.example.surveysystembackend.DTO.ChoiceDTO;
-import com.example.surveysystembackend.DTO.SurveyDTO;
-import com.example.surveysystembackend.model.Choice;
+import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
 import com.example.surveysystembackend.model.Element;
 import com.example.surveysystembackend.model.Page;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.SurveyRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,10 +31,9 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     public SurveyDTO createSurvey(SurveyDTO surveyDTO) {
         log.info("Creating survey: {}", surveyDTO);
-        // Map SurveyDTO to Survey entity
         Survey survey = modelMapper.map(surveyDTO, Survey.class);
 
-        // Map QuestionDTOs to Element entities with unique identifiers
+        // Map Questions to Element entities
         List<Element> elements = surveyDTO.getPages().stream()
                 .flatMap(pageDTO -> pageDTO.getElements().stream()
                         .map(elementDTO -> {
@@ -50,7 +47,7 @@ public class SurveyServiceImpl implements SurveyService {
                                 element.setId(UUID.randomUUID().toString());
                                 return element;
                             }
-                            return null; // Handle the case when elementDTO is null
+                            return null; // elementDTO is null
                         })
                 )
                 .filter(Objects::nonNull) // Remove any null elements
@@ -65,11 +62,11 @@ public class SurveyServiceImpl implements SurveyService {
                 })
                 .collect(Collectors.toList()));
 
-        // Set the owner ID from the currently authenticated user
+        // Set the owner ID
         String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
         survey.setOwnerId(ownerId);
 
-        // Initialize the list if it's not provided in the SurveyDTO
+        // Initialize the list if it's not provided
         if (elements != null) {
             survey.setPages(surveyDTO.getPages().stream()
                     .map(pageDTO -> modelMapper.map(pageDTO, Page.class))
@@ -78,55 +75,48 @@ public class SurveyServiceImpl implements SurveyService {
             survey.setPages(new ArrayList<>());
         }
 
-        // Save the survey to the repository
         survey.setId(null);
         survey = surveyRepository.save(survey);
         log.info("Survey created: {}", survey);
 
-        // Map the saved survey entity back to a SurveyDTO for response
         return modelMapper.map(survey, SurveyDTO.class);
     }
 
 
     @Override
-    public SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) {
-        // Check if the survey exists
+    public SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) throws AccessDeniedException {
+        // Check survey exists
         Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
         if (optionalSurvey.isEmpty()) {
-            // Survey not found
             return null;
         }
 
-        // Map updated survey data to the existing survey entity
         Survey existingSurvey = optionalSurvey.get();
 
-        // Retrieve the existing owner ID and edit access user IDs
         String ownerId = existingSurvey.getOwnerId();
         Set<String> editAccessUserIds = existingSurvey.getEditAccessUserIds();
 
-        // Get the authenticated user ID
+        // Authenticated username
         String authenticatedUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        // Check if the authenticated user has permission to edit the survey
+        // Check permission
         if (!ownerId.equals(authenticatedUserId) && !editAccessUserIds.contains(authenticatedUserId)) {
             log.warn("Permission denied to make changes of the survey");
-            // Unauthorized
-            return null;
+
+            throw new AccessDeniedException("Permission denied to make changes of the survey");
         }
 
-        // Set the owner ID in the updated survey DTO
         updatedSurveyDTO.setOwnerId(ownerId);
 
-        // Map updated survey DTO to the existing survey entity
         modelMapper.map(updatedSurveyDTO, existingSurvey);
 
-        // Map updated QuestionDTOs to Element entities with unique identifiers
+        // Map updated Questions
         List<Page> updatedPages = updatedSurveyDTO.getPages().stream()
                 .map(pageDTO -> {
                     Page page = modelMapper.map(pageDTO, Page.class);
 
                     List<Element> updatedElements = pageDTO.getElements().stream()
-                            .filter(elementDTO -> elementDTO != null) // Filter out null elements
+                            .filter(elementDTO -> elementDTO != null) // Filter null
                             .map(elementDTO -> {
                                 Element element = modelMapper.map(elementDTO, Element.class);
                                 if (elementDTO.getChoices() != null) {
@@ -144,11 +134,9 @@ public class SurveyServiceImpl implements SurveyService {
 
         existingSurvey.setPages(updatedPages);
 
-        // Save the updated survey to the repository
         existingSurvey.setId(surveyId);
         existingSurvey = surveyRepository.save(existingSurvey);
 
-        // Map the updated survey entity back to a SurveyDTO for response
         return modelMapper.map(existingSurvey, SurveyDTO.class);
     }
 

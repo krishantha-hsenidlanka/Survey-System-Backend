@@ -1,6 +1,11 @@
 package com.example.surveysystembackend.controller;
 
-import com.example.surveysystembackend.DTO.*;
+import com.example.surveysystembackend.DTO.Authentication.JwtResponseDTO;
+import com.example.surveysystembackend.DTO.Authentication.LoginRequestDTO;
+import com.example.surveysystembackend.DTO.Authentication.SignupRequestDTO;
+import com.example.surveysystembackend.DTO.User.ChangePasswordRequestDTO;
+import com.example.surveysystembackend.DTO.User.UserDTO;
+import com.example.surveysystembackend.exception.CustomRuntimeException;
 import com.example.surveysystembackend.model.ERole;
 import com.example.surveysystembackend.model.Role;
 import com.example.surveysystembackend.model.User;
@@ -10,10 +15,12 @@ import com.example.surveysystembackend.security.jwt.JwtUtils;
 import com.example.surveysystembackend.service.user.UserDetailsImpl;
 import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,13 +30,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
+@Slf4j
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
@@ -62,6 +67,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequestDTO loginRequest) {
+        log.info("Attempting to authenticate user: {}", loginRequest.getUsername());
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -82,22 +88,22 @@ public class AuthController {
                 .roles(roles)
                 .type("Bearer")
                 .build();
-
+        log.info("User authenticated successfully: {}", userDetails.getUsername());
         return ResponseEntity.ok(responseDTO);
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequestDTO signUpRequest) {
+        log.info("Registering new user: {}", signUpRequest.getUsername());
+
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new String("Error: Username is already taken!"));
+            log.error("Error: Username is already taken! Username: {}",signUpRequest.getUsername());
+            throw new CustomRuntimeException("Username is already taken! Username: "+ signUpRequest.getUsername(), HttpStatus.BAD_REQUEST );
         }
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new String("Error: Email is already in use!"));
+            log.error("Error: Email is already in use! Email: {}", signUpRequest.getEmail());
+            throw new CustomRuntimeException("Email is already in use! Email: "+ signUpRequest.getEmail(), HttpStatus.BAD_REQUEST );
         }
 
         User user = User.builder()
@@ -136,34 +142,44 @@ public class AuthController {
 
         user.setRoles(roles);
         userRepository.save(user);
+        log.info("User registered successfully: {}", user.getUsername());
 
         return ResponseEntity.ok(new String ("{\"message\":\"User registered successfully!\"}"));
     }
 
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequestDTO changePasswordRequest) {
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        log.info("Changing password for user: {}", user.getUsername());
 
         if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body(new String("Error: Current password is incorrect"));
+            log.error("Error: Current password is incorrect, user: {}", user.getUsername());
+            throw new CustomRuntimeException("Current password is incorrect", HttpStatus.BAD_REQUEST);
         }
 
         user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
         userRepository.save(user);
 
+        log.info("Password changed successfully for user: {}", userDetails.getUsername());
         return ResponseEntity.ok(new String("{\"message\":\"Password changed successfully\"}"));
     }
 
     @GetMapping("/user-details")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> getUserDetails() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Fetching user details");
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info(String.valueOf(authentication.getName()));
+        if (authentication == null || !authentication.isAuthenticated() || Objects.equals(authentication.getName(), "anonymousUser")) {
+            log.error("Unauthorized access to user details");
+            throw new CustomRuntimeException("Unauthorized access to user details", HttpStatus.UNAUTHORIZED);
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -173,6 +189,7 @@ public class AuthController {
 
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
 
+        log.info("User details fetched successfully: {}", userDetails.getUsername());
         return ResponseEntity.ok(userDTO);
     }
 

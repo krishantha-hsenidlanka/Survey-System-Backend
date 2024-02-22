@@ -1,6 +1,6 @@
 package com.example.surveysystembackend.service.response;
 
-import com.example.surveysystembackend.DTO.ResponseDTO;
+import com.example.surveysystembackend.DTO.Response.ResponseDTO;
 
 import java.util.List;
 

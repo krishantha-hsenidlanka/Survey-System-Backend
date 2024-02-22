@@ -1,4 +1,4 @@
-package com.example.surveysystembackend.DTO;
+package com.example.surveysystembackend.DTO.User;
 
 import com.example.surveysystembackend.model.Role;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,6 @@
 package com.example.surveysystembackend.service.user;
 
-import com.example.surveysystembackend.DTO.UserDTO;
+import com.example.surveysystembackend.DTO.User.UserDTO;
 import com.example.surveysystembackend.model.ERole;
 import com.example.surveysystembackend.model.Role;
 import com.example.surveysystembackend.model.User;

@@ -15,7 +15,7 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow all origins, you might want to restrict this in a production environment
+        // Allow all origins
         config.addAllowedOrigin("*");
 
         // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
