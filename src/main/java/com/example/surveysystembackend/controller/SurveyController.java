@@ -137,4 +137,125 @@ public class SurveyController {
         }
     }
 
+    @PostMapping("/generate-survey")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<SurveyDTO> generateSurvey(@RequestBody String userDescription) {
+        log.info("Generating survey based on user description");
+
+        // Call the service method to generate a survey
+        SurveyDTO generatedSurvey = surveyService.generateSurvey( getDefaultSurveyJson(), userDescription);
+
+        if (generatedSurvey != null) {
+            log.info("Survey generated successfully");
+            return ResponseEntity.ok(generatedSurvey);
+        } else {
+            log.error("Error generating survey");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    private String getDefaultSurveyJson() {
+        // default survey JSON
+        return """
+                                
+                ﻿
+                ```{
+                 "title": "Survey Title",
+                 "description": "Survey Description",
+                 "pages": [
+                 {
+                  "name": "page1",
+                  "elements": [
+                  {
+                   "type": "radiogroup",
+                   "name": "question1",
+                   "choices": [
+                   "Item 1",
+                   "Item 2",
+                   "Item 3"
+                   ]
+                  },
+                  {
+                   "type": "checkbox",
+                   "name": "question3",
+                   "choices": [
+                   "Item 1",
+                   "Item 2",
+                   "Item 3"
+                   ]
+                  },
+                  {
+                   "type": "boolean",
+                   "name": "question5"
+                  },
+                  {
+                   "type": "dropdown",
+                   "name": "question4",
+                   "choices": [
+                   "Item 1",
+                   "Item 2",
+                   "Item 3"
+                   ]
+                  },
+                  {
+                   "type": "comment",
+                   "name": "question8"
+                  }
+                  ],
+                  "title": "Page 1",
+                  "description": "Page 1 Description"
+                 },
+                 {
+                  "name": "page2",
+                  "elements": [
+                  {
+                   "type": "ranking",
+                   "name": "question6",
+                   "choices": [
+                   "Item 1",
+                   "Item 2",
+                   "Item 3"
+                   ]
+                  },
+                  {
+                   "type": "text",
+                   "name": "question7"
+                  }
+                  ],
+                  "title": "Page 2",
+                  "description": "Page 2 Description"
+                 }
+                 ]
+                }```
+                ﻿
+                ﻿﻿Generate a new survey for below description in JSON format according to the above provided structure. Ensure that the survey has the specified title, description, pages, elements, titles, and descriptions as per the given sample, and only include the mentioned element types.
+                Must remember that should generate according to this DTO models -
+                ﻿
+                ```publicclassSurveyDTO {
+                    private String id;
+                    private String title;
+                    private String description;
+                    private List<PageDTO> pages;
+                   \s
+                }
+                public class PageDTO {
+                    private String name;
+                    private String title;
+                    private String description;
+                    private List<ElementDTO> elements;
+                }
+                                
+                public class ElementDTO {
+                    private String type;
+                    private String name;
+                    private String title;
+                    private List<Object> choices;
+                    private Boolean isRequired;
+                    private List<Object> rows;
+                    private List<Object> columns;
+                }```
+                ﻿
+                """;
+    }
+
 }

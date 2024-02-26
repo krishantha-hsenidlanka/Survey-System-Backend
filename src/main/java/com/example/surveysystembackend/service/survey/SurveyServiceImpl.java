@@ -5,11 +5,20 @@ import com.example.surveysystembackend.model.Element;
 import com.example.surveysystembackend.model.Page;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.SurveyRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.AccessDeniedException;
 import java.util.*;
@@ -21,11 +30,21 @@ public class SurveyServiceImpl implements SurveyService {
 
     private final SurveyRepository surveyRepository;
     private final ModelMapper modelMapper;
+    private final RestTemplate restTemplate;
+
+    @Value("${gemini.api.key}")
+    private String apiKey;
+
+    @Value("${gemini.api.url}")
+    private String apiUrl;
+
 
     @Autowired
-    public SurveyServiceImpl(SurveyRepository surveyRepository, ModelMapper modelMapper) {
+    public SurveyServiceImpl(SurveyRepository surveyRepository, ModelMapper modelMapper, RestTemplate restTemplate) {
         this.surveyRepository = surveyRepository;
         this.modelMapper = modelMapper;
+        this.restTemplate = restTemplate;
+
     }
 
     @Override
@@ -188,13 +207,129 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         Survey survey = optionalSurvey.get();
-        // Set the survey status to "deleted" or handle deletion logic based on your requirements
+        // Survey status to "deleted"
         survey.setDeleted(true);
 
-        // Save the updated survey to the repository
         surveyRepository.save(survey);
 
         return true;
+    }
+
+    @Override
+    public SurveyDTO generateSurvey(String surveyJson, String userDescription) {
+        // Combine the default survey JSON and user description
+        String combinedJson = surveyJson + "\n\nDescription:\n" + userDescription + "\n\nOutout JSON :\n";
+
+        // Create the request content as per the Bash script
+        Map<String, Object> requestBody = new HashMap<>();
+        List<Map<String, Object>> contents = new ArrayList<>();
+
+        Map<String, Object> content = new HashMap<>();
+        List<Map<String, Object>> parts = new ArrayList<>();
+
+        Map<String, Object> part1 = new HashMap<>();
+        part1.put("text", "Use the provided sample JSON format(SurveyJS format) as a reference to create a new survey. Ensure that the survey includes only the following element types: \"radiogroup,\" \"boolean,\" \"dropdown,\" \"comment,\" \"text,\" and \"ranking.\"\n\n﻿﻿");
+        Map<String, Object> part2 = new HashMap<>();
+        part2.put("text", combinedJson);
+
+        parts.add(part1);
+        parts.add(part2);
+
+        content.put("parts", parts);
+        contents.add(content);
+
+        requestBody.put("contents", contents);
+
+        // Set up generationConfig
+        Map<String, Object> generationConfig = new HashMap<>();
+        generationConfig.put("temperature", 0.35);
+        generationConfig.put("topK", 1);
+        generationConfig.put("topP", 1);
+        generationConfig.put("maxOutputTokens", 2048);
+        generationConfig.put("stopSequences", new ArrayList<>());
+
+        requestBody.put("generationConfig", generationConfig);
+
+        // Set up safetySettings
+        List<Map<String, Object>> safetySettings = new ArrayList<>();
+
+        Map<String, Object> harassmentSetting = new HashMap<>();
+        harassmentSetting.put("category", "HARM_CATEGORY_HARASSMENT");
+        harassmentSetting.put("threshold", "BLOCK_MEDIUM_AND_ABOVE");
+        safetySettings.add(harassmentSetting);
+
+        Map<String, Object> hateSpeechSetting = new HashMap<>();
+        hateSpeechSetting.put("category", "HARM_CATEGORY_HATE_SPEECH");
+        hateSpeechSetting.put("threshold", "BLOCK_MEDIUM_AND_ABOVE");
+        safetySettings.add(hateSpeechSetting);
+
+        Map<String, Object> sexuallyExplicitSetting = new HashMap<>();
+        sexuallyExplicitSetting.put("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT");
+        sexuallyExplicitSetting.put("threshold", "BLOCK_MEDIUM_AND_ABOVE");
+        safetySettings.add(sexuallyExplicitSetting);
+
+        Map<String, Object> dangerousContentSetting = new HashMap<>();
+        dangerousContentSetting.put("category", "HARM_CATEGORY_DANGEROUS_CONTENT");
+        dangerousContentSetting.put("threshold", "BLOCK_MEDIUM_AND_ABOVE");
+        safetySettings.add(dangerousContentSetting);
+
+        requestBody.put("safetySettings", safetySettings);
+
+        // Convert the request body to JSON
+        String requestJson;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            requestJson = objectMapper.writeValueAsString(requestBody);
+        } catch (JsonProcessingException e) {
+            log.error("Error converting request body to JSON", e);
+            return null;
+        }
+
+        // Set up headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Set up the request entity with headers and requestJson
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
+
+        // Make the HTTP POST request
+        String urlWithApiKey = apiUrl + "?key=" + apiKey;
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(urlWithApiKey, requestEntity, String.class);
+
+        // Extract "text" from the response
+        String responseBody = responseEntity.getBody();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            // Remove triple backticks
+            responseBody = responseBody.replaceAll("```", "");
+
+            JsonNode jsonNode = objectMapper.readTree(responseBody).get("candidates").get(0).get("content").get("parts").get(0).get("text");
+            String extractedText = jsonNode.asText();
+
+            // Convert the extracted text to SurveyDTO
+            SurveyDTO generatedSurveyDTO = convertJsonToSurveyDTO(extractedText);
+
+            // Save the generated survey to the database
+            SurveyDTO savedSurveyDTO = createSurvey(generatedSurveyDTO);
+
+            // Return the ID of the saved survey
+            return savedSurveyDTO;
+        } catch (JsonProcessingException | NullPointerException e) {
+            log.error("Error extracting text from JSON response", e);
+            return null;
+        }
+    }
+
+
+        private SurveyDTO convertJsonToSurveyDTO(String json) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(json, SurveyDTO.class);
+        } catch (JsonProcessingException e) {
+            log.error("Error converting JSON to SurveyDTO", e);
+            return null;
+        }
     }
 
 }

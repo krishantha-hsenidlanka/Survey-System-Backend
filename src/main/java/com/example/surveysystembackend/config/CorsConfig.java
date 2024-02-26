@@ -18,7 +18,7 @@ public class CorsConfig {
         // Allow all origins
         config.addAllowedOrigin("*");
 
-        // Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+        // Allow all HTTP methods
         config.addAllowedMethod("*");
 
         // Allow all headers
