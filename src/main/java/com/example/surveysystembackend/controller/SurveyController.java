@@ -142,7 +142,6 @@ public class SurveyController {
     public ResponseEntity<SurveyDTO> generateSurvey(@RequestBody String userDescription) {
         log.info("Generating survey based on user description");
 
-        // Call the service method to generate a survey
         SurveyDTO generatedSurvey = surveyService.generateSurvey( getDefaultSurveyJson(), userDescription);
 
         if (generatedSurvey != null) {

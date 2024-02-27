@@ -1,6 +1,7 @@
 package com.example.surveysystembackend.service.survey;
 
 import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
+import com.example.surveysystembackend.exception.CustomRuntimeException;
 import com.example.surveysystembackend.model.Element;
 import com.example.surveysystembackend.model.Page;
 import com.example.surveysystembackend.model.Survey;
@@ -12,10 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -164,10 +163,25 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     public SurveyDTO getSurveyById(String surveyId) {
+        Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
 
-        return surveyRepository.findById(surveyId)
-                .map(survey -> modelMapper.map(survey, SurveyDTO.class))
-                .orElse(null);
+        return optionalSurvey.map(survey -> {
+            String authenticatedUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+            boolean isOwnerOrHasEditAccess = authenticatedUserId.equals(survey.getOwnerId()) ||
+                    survey.getEditAccessUserIds().contains(authenticatedUserId);
+
+            Collection<SimpleGrantedAuthority> authorities = (Collection<SimpleGrantedAuthority>)
+                    SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            boolean isAdmin = authorities.stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+            if (survey.isPublic() || isOwnerOrHasEditAccess || isAdmin) {
+                return modelMapper.map(survey, SurveyDTO.class);
+            } else {
+                log.warn("Permission denied to view the survey");
+                throw new CustomRuntimeException("Permission denied to view the survey", HttpStatus.FORBIDDEN);
+            }
+        }).orElse(null);
     }
 
 
