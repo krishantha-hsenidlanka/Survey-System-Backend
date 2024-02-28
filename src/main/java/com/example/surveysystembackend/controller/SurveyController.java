@@ -37,7 +37,7 @@ public class SurveyController {
         }
 
         SurveyDTO createdSurvey = surveyService.createSurvey(surveyDTO);
-        log.info("Survey created successfully");
+        log.info("Survey created successfully: {}", createdSurvey);
         return ResponseEntity.ok(createdSurvey);
     }
 
