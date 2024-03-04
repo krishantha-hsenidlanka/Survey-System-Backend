@@ -46,6 +46,8 @@ public class User {
 
     private Date registrationDate;
 
+    private String verificationToken;
 
+    private Date verificationTokenExpirationDate;
 
 }

@@ -12,9 +12,11 @@ import com.example.surveysystembackend.model.User;
 import com.example.surveysystembackend.repository.RoleRepository;
 import com.example.surveysystembackend.repository.UserRepository;
 import com.example.surveysystembackend.security.jwt.JwtUtils;
+import com.example.surveysystembackend.service.email.EmailService;
 import com.example.surveysystembackend.service.user.UserDetailsImpl;
 import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -58,6 +60,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
 
 
     @Override
@@ -110,8 +115,10 @@ public class AuthServiceImpl implements AuthService {
                 .username(signUpRequest.getUsername())
                 .email(signUpRequest.getEmail())
                 .password(encoder.encode(signUpRequest.getPassword()))
-                .enabled(true)
+                .enabled(false)
                 .registrationDate(new Date())
+                .verificationToken(generateVerificationToken(signUpRequest))
+                .verificationTokenExpirationDate(calculateExpirationDate())
                 .build();
 
 
@@ -142,6 +149,9 @@ public class AuthServiceImpl implements AuthService {
 
         user.setRoles(roles);
         userRepository.save(user);
+
+        emailService.sendVerificationEmail(user);
+
         log.info("User registered successfully: {}", user.getUsername());
 
         return ResponseEntity.ok(new String ("{\"message\":\"User registered successfully!\"}"));
@@ -189,9 +199,35 @@ public class AuthServiceImpl implements AuthService {
         log.info("User details fetched successfully: {}", userDetails.getUsername());
         return ResponseEntity.ok(userDTO);
     }
+    @Override
+    public boolean verifyUser(String token) {
+        Optional<User> optionalUser = userRepository.findByVerificationToken(token);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            if (user.getVerificationTokenExpirationDate().after(new Date())) {
+                user.setEnabled(true);
+                user.setVerificationToken(null);
+                user.setVerificationTokenExpirationDate(null);
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
 
     private boolean isReservedUsername(String username) {
         List<String> reservedUsernames = Arrays.asList("admin", "guest", "anonymous", "user", "anonymousUser");
         return reservedUsernames.contains(username.toLowerCase());
+    }
+
+    private String generateVerificationToken(SignupRequestDTO user) {
+        String baseToken = user.getUsername() + user.getEmail() + new Date();
+        String verificationToken = RandomStringUtils.randomAlphanumeric(30) + baseToken.hashCode();
+        log.info("Generated verification token for user '{}': {}", user.getUsername(), verificationToken);
+        return verificationToken;
+    }
+
+    private Date calculateExpirationDate() {
+        return new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
     }
 }

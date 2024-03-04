@@ -27,4 +27,8 @@ public class UserDTO {
     private Boolean enabled;
 
     private Date registrationDate;
+
+    private String verificationToken;
+
+    private Date verificationTokenExpirationDate;
 }

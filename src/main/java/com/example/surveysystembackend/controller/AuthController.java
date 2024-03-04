@@ -3,10 +3,12 @@ package com.example.surveysystembackend.controller;
 import com.example.surveysystembackend.DTO.Authentication.LoginRequestDTO;
 import com.example.surveysystembackend.DTO.Authentication.SignupRequestDTO;
 import com.example.surveysystembackend.DTO.User.ChangePasswordRequestDTO;
+import com.example.surveysystembackend.exception.CustomRuntimeException;
 import com.example.surveysystembackend.service.Auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,5 +43,14 @@ public class AuthController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> getUserDetails() {
         return authService.getUserDetails();
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyUser(@RequestParam String token) {
+        if (authService.verifyUser(token)) {
+            return ResponseEntity.ok("User verified successfully!");
+        } else {
+            throw new CustomRuntimeException("Invalid or expired verification token.", HttpStatus.BAD_REQUEST);
+        }
     }
 }

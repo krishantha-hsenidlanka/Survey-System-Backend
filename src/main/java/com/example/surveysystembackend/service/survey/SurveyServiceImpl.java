@@ -164,7 +164,6 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     public SurveyDTO getSurveyById(String surveyId) {
         Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
-
         return optionalSurvey.map(survey -> {
             String authenticatedUserId = SecurityContextHolder.getContext().getAuthentication().getName();
             boolean isOwnerOrHasEditAccess = authenticatedUserId.equals(survey.getOwnerId()) ||

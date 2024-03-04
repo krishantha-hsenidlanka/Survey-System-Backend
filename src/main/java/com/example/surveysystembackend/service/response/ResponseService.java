@@ -6,7 +6,12 @@ import java.util.List;
 
 public interface ResponseService {
     ResponseDTO createResponse(ResponseDTO responseDTO);
+
     ResponseDTO getResponseById(String responseId);
+
     List<ResponseDTO> getResponsesBySurveyId(String surveyId);
+
     List<ResponseDTO> getResponsesByUserId(String userId);
+
+    public String getCurrentUserId();
 }

@@ -75,4 +75,23 @@ public class ResponseController {
         }
 
     }
+
+    @GetMapping("/byCurrentUser")
+    public ResponseEntity<List<ResponseDTO>> getResponsesByCurrentUser() {
+        String currentUserId = responseService.getCurrentUserId();
+
+        log.info("Fetching responses for the current user ID: {}", currentUserId);
+
+        List<ResponseDTO> responsesByCurrentUser = responseService.getResponsesByUserId(currentUserId);
+
+        if (!responsesByCurrentUser.isEmpty()) {
+            log.info("Responses fetched successfully for the current user ID: {}", currentUserId);
+            return ResponseEntity.ok(responsesByCurrentUser);
+        } else {
+            log.warn("No responses found for the current user ID: {}", currentUserId);
+            throw new EntityNotFoundException("No responses found for the current user ID: " + currentUserId);
+        }
+    }
+
+
 }

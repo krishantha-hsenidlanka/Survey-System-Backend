@@ -18,4 +18,7 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     List<User> findByEnabledTrue();
 
+    Optional<User> findByVerificationToken(String verificationToken);
+
+
 }

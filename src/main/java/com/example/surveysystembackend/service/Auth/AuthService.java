@@ -13,4 +13,7 @@ public interface AuthService {
     ResponseEntity<?> changePassword(ChangePasswordRequestDTO changePasswordRequest);
 
     ResponseEntity<?> getUserDetails();
+
+    public boolean verifyUser(String token);
+
 }

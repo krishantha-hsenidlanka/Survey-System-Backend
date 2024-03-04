@@ -103,7 +103,7 @@ public class ResponseServiceImpl implements ResponseService {
 
 
 
-    private String getCurrentUserId() {
+    public String getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (principal instanceof UserDetails) {
