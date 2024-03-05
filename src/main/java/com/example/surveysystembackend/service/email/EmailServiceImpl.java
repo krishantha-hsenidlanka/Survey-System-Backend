@@ -1,6 +1,7 @@
 package com.example.surveysystembackend.service.email;
 
 import com.example.surveysystembackend.model.User;
+import jakarta.mail.internet.InternetAddress;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.frontEndUrl}")
     private String frontEndUrl;
 
+    @Value("${app.emailSender}")
+    private String emailSender;
+
     public EmailServiceImpl(JavaMailSender javaMailSender, TemplateEngine templateEngine) {
         this.javaMailSender = javaMailSender;
         this.templateEngine = templateEngine;
@@ -40,11 +44,12 @@ public class EmailServiceImpl implements EmailService {
 
         MimeMessagePreparator messagePreparator = mimeMessage -> {
             MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage);
+            messageHelper.setFrom(new InternetAddress(emailSender));
             messageHelper.setTo(user.getEmail());
             messageHelper.setSubject(subject);
             messageHelper.setText(emailBody, true);
         };
-
+        log.info("Sending verification email for {}", user.getEmail());
         javaMailSender.send(messagePreparator);
     }
 
