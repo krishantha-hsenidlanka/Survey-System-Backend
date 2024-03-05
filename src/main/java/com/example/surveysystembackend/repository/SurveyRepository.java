@@ -12,9 +12,7 @@ import java.util.List;
 public interface SurveyRepository extends MongoRepository<Survey, String> {
 
     List<Survey> findByOwnerId(String ownerId);
-
     List<Survey> findByOwnerIdAndDeletedFalse(String ownerId);
-
     @Query(value = "{ 'deleted' : true }", count = true)
     long countByDeletedTrue();
 

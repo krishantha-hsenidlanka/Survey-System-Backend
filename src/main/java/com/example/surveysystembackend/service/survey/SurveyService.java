@@ -8,17 +8,10 @@ import java.util.List;
 public interface SurveyService {
     SurveyDTO createSurvey(SurveyDTO surveyDTO);
     SurveyDTO getSurveyById(String surveyId);
-
     SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) throws AccessDeniedException;
-
     List<SurveyDTO> getAllSurveys();
     List<SurveyDTO> getSurveysByOwnerId(String ownerId);
-
     List<SurveyDTO> getSurveysForLoggedInUser();
-
     boolean deleteSurvey(String surveyId);
-
     public SurveyDTO generateSurvey(String surveyJson, String userDescription);
-
-
 }

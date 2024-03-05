@@ -30,7 +30,6 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-
     public Optional<UserDTO> getUserById(String userId) {
         return userRepository.findById(userId)
                 .map(user -> modelMapper.map(user, UserDTO.class));
@@ -72,18 +71,11 @@ public class UserService {
                         user.setRoles(roles);
                     }
 
-
-
-
-
-
-
                     userRepository.save(user);
                     return true;
                 })
                 .orElse(false);
     }
-
 
     public boolean updateUserStatus(String userId, boolean enabled) {
         return userRepository.findById(userId)
@@ -109,6 +101,4 @@ public class UserService {
                 })
                 .orElse(false);
     }
-
-
 }

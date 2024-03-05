@@ -37,13 +37,11 @@ public class SurveyServiceImpl implements SurveyService {
     @Value("${gemini.api.url}")
     private String apiUrl;
 
-
     @Autowired
     public SurveyServiceImpl(SurveyRepository surveyRepository, ModelMapper modelMapper, RestTemplate restTemplate) {
         this.surveyRepository = surveyRepository;
         this.modelMapper = modelMapper;
         this.restTemplate = restTemplate;
-
     }
 
     @Override
@@ -60,8 +58,6 @@ public class SurveyServiceImpl implements SurveyService {
                                 if (elementDTO.getChoices() != null) {
                                     element.setChoices(elementDTO.getChoices());
                                 }
-
-
                                 element.setId(UUID.randomUUID().toString());
                                 return element;
                             }
@@ -80,7 +76,6 @@ public class SurveyServiceImpl implements SurveyService {
                 })
                 .collect(Collectors.toList()));
 
-        // Set the owner ID
         String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
         survey.setOwnerId(ownerId);
 
@@ -99,7 +94,6 @@ public class SurveyServiceImpl implements SurveyService {
 
         return modelMapper.map(survey, SurveyDTO.class);
     }
-
 
     @Override
     public SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) throws AccessDeniedException {
@@ -120,7 +114,6 @@ public class SurveyServiceImpl implements SurveyService {
         // Check permission
         if (!ownerId.equals(authenticatedUserId) && !editAccessUserIds.contains(authenticatedUserId)) {
             log.warn("Permission denied to make changes of the survey");
-
             throw new AccessDeniedException("Permission denied to make changes of the survey");
         }
 
@@ -158,9 +151,6 @@ public class SurveyServiceImpl implements SurveyService {
         return modelMapper.map(existingSurvey, SurveyDTO.class);
     }
 
-
-
-
     @Override
     public SurveyDTO getSurveyById(String surveyId) {
         Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
@@ -182,7 +172,6 @@ public class SurveyServiceImpl implements SurveyService {
             }
         }).orElse(null);
     }
-
 
     @Override
     public List<SurveyDTO> getSurveysByOwnerId(String ownerId) {
@@ -233,7 +222,7 @@ public class SurveyServiceImpl implements SurveyService {
         // Combine the default survey JSON and user description
         String combinedJson = surveyJson + "\n\nDescription:\n" + userDescription + "\n\nOutout JSON :\n";
 
-        // Create the request content as per the Bash script
+        // Create the request content
         Map<String, Object> requestBody = new HashMap<>();
         List<Map<String, Object>> contents = new ArrayList<>();
 
@@ -302,7 +291,7 @@ public class SurveyServiceImpl implements SurveyService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Set up the request entity with headers and requestJson
+        // Set up the request entity
         HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
 
         // Make the HTTP POST request
@@ -314,19 +303,18 @@ public class SurveyServiceImpl implements SurveyService {
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
-            // Remove triple backticks
             responseBody = responseBody.replaceAll("```", "");
 
             JsonNode jsonNode = objectMapper.readTree(responseBody).get("candidates").get(0).get("content").get("parts").get(0).get("text");
             String extractedText = jsonNode.asText();
 
-            // Convert the extracted text to SurveyDTO
+            // Text to SurveyDTO
             SurveyDTO generatedSurveyDTO = convertJsonToSurveyDTO(extractedText);
 
-            // Save the generated survey to the database
+            // Save to the database
             SurveyDTO savedSurveyDTO = createSurvey(generatedSurveyDTO);
 
-            // Return the ID of the saved survey
+            // Return the ID
             return savedSurveyDTO;
         } catch (JsonProcessingException | NullPointerException e) {
             log.error("Error extracting text from JSON response", e);
@@ -334,8 +322,7 @@ public class SurveyServiceImpl implements SurveyService {
         }
     }
 
-
-        private SurveyDTO convertJsonToSurveyDTO(String json) {
+    private SurveyDTO convertJsonToSurveyDTO(String json) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.readValue(json, SurveyDTO.class);
@@ -344,5 +331,4 @@ public class SurveyServiceImpl implements SurveyService {
             return null;
         }
     }
-
 }

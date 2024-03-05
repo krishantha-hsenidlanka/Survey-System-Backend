@@ -34,7 +34,6 @@ public class ResponseController {
     @GetMapping("/{responseId}")
     public ResponseEntity<ResponseDTO> getResponseById(@PathVariable String responseId) {
         log.info("Fetching response by ID: {}", responseId);
-
         ResponseDTO responseDTO = responseService.getResponseById(responseId);
         if (responseDTO != null) {
             log.info("Response found successfully");
@@ -48,9 +47,7 @@ public class ResponseController {
     @GetMapping("/bySurvey/{surveyId}")
     public ResponseEntity<List<ResponseDTO>> getResponsesBySurveyId(@PathVariable String surveyId) {
         log.info("Fetching responses by survey ID: {}", surveyId);
-
         List<ResponseDTO> responseDTOs = responseService.getResponsesBySurveyId(surveyId);
-
         if (!responseDTOs.isEmpty()) {
             log.info("Responses found successfully for survey ID: {}", surveyId);
             return ResponseEntity.ok(responseDTOs);
@@ -63,9 +60,7 @@ public class ResponseController {
     @GetMapping("/byUser/{userId}")
     public ResponseEntity<List<ResponseDTO>> getResponsesByUserId(@PathVariable String userId) {
         log.info("Fetching responses by user ID: {}", userId);
-
         List<ResponseDTO> responsesByUserId = responseService.getResponsesByUserId(userId);
-
         if (!responsesByUserId.isEmpty()) {
             log.info("Responses fetched successfully for user ID: {}", userId);
             return ResponseEntity.ok(responsesByUserId);
@@ -73,17 +68,13 @@ public class ResponseController {
             log.warn("No responses found for user ID: {}", userId);
             throw new EntityNotFoundException("No responses found for user ID: " + userId);
         }
-
     }
 
     @GetMapping("/byCurrentUser")
     public ResponseEntity<List<ResponseDTO>> getResponsesByCurrentUser() {
         String currentUserId = responseService.getCurrentUserId();
-
         log.info("Fetching responses for the current user ID: {}", currentUserId);
-
         List<ResponseDTO> responsesByCurrentUser = responseService.getResponsesByUserId(currentUserId);
-
         if (!responsesByCurrentUser.isEmpty()) {
             log.info("Responses fetched successfully for the current user ID: {}", currentUserId);
             return ResponseEntity.ok(responsesByCurrentUser);
@@ -92,6 +83,4 @@ public class ResponseController {
             throw new EntityNotFoundException("No responses found for the current user ID: " + currentUserId);
         }
     }
-
-
 }

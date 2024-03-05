@@ -14,7 +14,6 @@ import com.example.surveysystembackend.repository.UserRepository;
 import com.example.surveysystembackend.security.jwt.JwtUtils;
 import com.example.surveysystembackend.service.email.EmailService;
 import com.example.surveysystembackend.service.user.UserDetailsImpl;
-import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.modelmapper.ModelMapper;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-
     @Autowired
     ModelMapper modelMapper;
 
@@ -56,25 +54,19 @@ public class AuthServiceImpl implements AuthService {
     JwtUtils jwtUtils;
 
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
     private EmailService emailService;
 
-
     @Override
     public ResponseEntity<?> authenticateUser(LoginRequestDTO loginRequest) {
         log.info("Attempting to authenticate user: {}", loginRequest.getUsername());
-
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
 
+        String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -121,10 +113,8 @@ public class AuthServiceImpl implements AuthService {
                 .verificationTokenExpirationDate(calculateExpirationDate())
                 .build();
 
-
         Set<String> strRoles = signUpRequest.getRoles();
         Set<Role> roles = new HashSet<>();
-
 
         if (strRoles == null) {
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)

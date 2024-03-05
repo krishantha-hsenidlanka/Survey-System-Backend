@@ -18,14 +18,12 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDetailsImpl implements UserDetails {
-
     private String id;
     private String username;
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
     private boolean enabled;
-
 
     @Override
     public boolean isAccountNonExpired() {

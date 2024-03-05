@@ -7,13 +7,9 @@ import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
     ResponseEntity<?> authenticateUser(LoginRequestDTO loginRequest);
-
     ResponseEntity<?> registerUser(SignupRequestDTO signUpRequest);
-
     ResponseEntity<?> changePassword(ChangePasswordRequestDTO changePasswordRequest);
-
     ResponseEntity<?> getUserDetails();
-
     public boolean verifyUser(String token);
 
 }

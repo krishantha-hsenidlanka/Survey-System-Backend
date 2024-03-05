@@ -15,20 +15,12 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-
     private String id;
-
     private String username;
-
     private String email;
-
     private Set<String> roles;
-
     private Boolean enabled;
-
     private Date registrationDate;
-
     private String verificationToken;
-
     private Date verificationTokenExpirationDate;
 }

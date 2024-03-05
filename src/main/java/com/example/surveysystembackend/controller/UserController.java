@@ -23,7 +23,6 @@ public class UserController {
     @GetMapping("/")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         log.info("Fetching all users");
-
         List<UserDTO> users = userService.getAllUsers();
         log.info("All users fetched successfully");
         return ResponseEntity.ok(users);
@@ -32,7 +31,6 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {
         log.info("Fetching user by ID: {}", userId);
-
         return userService.getUserById(userId)
                 .map(userDTO -> {
                     log.info("User found successfully");
@@ -48,9 +46,7 @@ public class UserController {
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUserDetails(@PathVariable String userId, @Valid @RequestBody UserDTO updatedUser) {
         log.info("Updating user details for ID: {}", userId);
-
         boolean success = userService.updateUserDetails(userId, updatedUser);
-
         if (success) {
             log.info("User details updated successfully");
             return ResponseEntity.ok("{\"message\":\"User details updated successfully!\"}");
@@ -64,9 +60,7 @@ public class UserController {
     @PutMapping("/{userId}/status")
     public ResponseEntity<?> updateUserStatus(@PathVariable String userId, @RequestParam boolean enabled) {
         log.info("Updating user status for ID: {}", userId);
-
         boolean success = userService.updateUserStatus(userId, enabled);
-
         if (success) {
             log.info("User status updated successfully for ID: {}", userId);
             return ResponseEntity.ok("User status updated successfully!");
@@ -80,9 +74,7 @@ public class UserController {
     @PutMapping("/{userId}/roles")
     public ResponseEntity<?> updateRoles(@PathVariable String userId, @RequestBody List<String> userRoles) {
         log.info("Updating user roles for ID: {}", userId);
-
         boolean success = userService.updateRoles(userId, userRoles);
-
         if (success) {
             log.info("User roles updated successfully for ID: {}", userId);
             return ResponseEntity.ok("User roles updated successfully!");
@@ -91,5 +83,4 @@ public class UserController {
             throw new EntityNotFoundException("User not found for ID: " + userId);
         }
     }
-
 }

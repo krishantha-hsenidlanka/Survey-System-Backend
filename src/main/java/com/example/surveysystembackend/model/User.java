@@ -22,7 +22,6 @@ import java.util.Set;
 @AllArgsConstructor
 public class User {
 
-
     @Id
     private String id;
 
@@ -41,13 +40,9 @@ public class User {
 
     @DBRef
     private Set<Role> roles = new HashSet<>();
-
     private boolean enabled;
-
     private Date registrationDate;
-
     private String verificationToken;
-
     private Date verificationTokenExpirationDate;
 
 }

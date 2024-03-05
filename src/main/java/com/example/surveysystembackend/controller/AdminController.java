@@ -29,7 +29,6 @@ public class AdminController {
     @GetMapping("/dashboard-summary")
     public ResponseEntity<?> getAdminDashboardSummary() {
         log.info("Fetching admin dashboard summary");
-
         Map<String, Long> summary = new HashMap<>();
         summary.put("userCount", adminDashboardService.getUserCount());
         summary.put("surveyCount", adminDashboardService.getSurveyCount());
@@ -37,7 +36,6 @@ public class AdminController {
         summary.put("deletedSurveyCount", adminDashboardService.getDeletedSurveyCount());
         summary.put("enabledUserCount", adminDashboardService.getEnabledUserCount());
         summary.put("responsesCount", adminDashboardService.getResponsesCount());
-
         log.info("Admin dashboard summary fetched successfully");
         return ResponseEntity.ok(summary);
     }

@@ -97,11 +97,8 @@ public class ResponseServiceImpl implements ResponseService {
                         return false;
                     });
         }
-
         return false;
     }
-
-
 
     public String getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -112,5 +109,4 @@ public class ResponseServiceImpl implements ResponseService {
             return "guest";
         }
     }
-
 }
