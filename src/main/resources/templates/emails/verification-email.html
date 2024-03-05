@@ -3,16 +3,22 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Email Verification</title>
+    <title>Welcome to Ai Survey!</title>
 </head>
 
 <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f7f7f7; margin: 0; padding: 0;">
 <div style="width: 80%; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-    <p style="margin-bottom: 15px; font-size: 16px; color: #333; line-height: 1.6;">Dear <span th:text="${username}" style="font-weight: bold; color: #007bff;"></span>,</p>
-    <p style="margin-bottom: 20px; font-size: 16px; color: #333; line-height: 1.6;">Click the following link to verify your email address:</p>
-    <a th:href="${verificationLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 20px; margin-top: 15px; text-decoration: none; background-color: #007bff; color: #fff; border-radius: 4px; font-size: 16px;">Verify Email</a>
-    <p style="margin-top: 20px; margin-bottom: 15px; font-size: 16px; color: #333; line-height: 1.6;">Best regards,</p>
-    <p style="font-weight: bold; color: #007bff; font-size: 16px;">Ai Survey Team</p>
+    <p style="margin-bottom: 15px; font-size: 16px; color: #333; line-height: 1.6;">Hi <span th:text="${username}" style="font-weight: bold; color: #007bff;"></span>,</p>
+    <p style="margin-bottom: 20px; font-size: 16px; color: #333; line-height: 1.6;">Thank you for signing up with Ai Survey! To ensure you receive important updates and access your surveys, please verify your email address.</p>
+    <a th:href="${verificationLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 20px; margin-top: 15px; text-decoration: none; background-color: #007bff; color: #fff; border-radius: 4px; font-size: 16px;">Verify Your Email</a>
+    <p style="margin-top: 20px; margin-bottom: 15px; font-size: 16px; color: #333; line-height: 1.6;">By verifying your email, you'll be able to:</p>
+    <ul>
+        <li>Access your surveys and responses.</li>
+        <li>Receive notifications about new surveys and updates.</li>
+        <li>Manage your account settings.</li>
+    </ul>
+    <p style="margin-top: 20px; margin-bottom: 15px; font-size: 16px; color: #333; line-height: 1.6;">If you have any questions, please don't hesitate to contact us at support-ai-survey@dnire.com.</p>
+    <p style="font-weight: bold; color: #007bff; font-size: 16px;">The Ai Survey Team</p>
 </div>
 </body>
 </html>
