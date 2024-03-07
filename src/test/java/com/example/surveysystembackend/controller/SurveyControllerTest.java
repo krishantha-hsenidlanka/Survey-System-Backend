@@ -2,6 +2,7 @@ package com.example.surveysystembackend.controller;
 
 import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
 import com.example.surveysystembackend.controller.SurveyController;
+import com.example.surveysystembackend.service.survey.SurveyGenerationService;
 import com.example.surveysystembackend.service.survey.SurveyService;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
@@ -30,6 +31,9 @@ class SurveyControllerTest {
 
     @Mock
     private SurveyService surveyService;
+
+    @Mock
+    private SurveyGenerationService surveyGenerationService;
 
     @InjectMocks
     private SurveyController surveyController;
@@ -179,7 +183,7 @@ class SurveyControllerTest {
         SurveyDTO generatedSurvey = new SurveyDTO();
         generatedSurvey.setTitle("Generated Survey");
 
-        when(surveyService.generateSurvey(anyString(), eq(userDescription))).thenReturn(generatedSurvey);
+        when(surveyGenerationService.generateSurvey(eq(userDescription))).thenReturn(generatedSurvey);
 
         // Act
         log.info("Calling generateSurvey with user description: {}", userDescription);
@@ -188,7 +192,7 @@ class SurveyControllerTest {
         // Assert
         log.info("Asserting response for Generate Survey");
         assertEquals(ResponseEntity.ok(generatedSurvey), responseEntity);
-        verify(surveyService, times(1)).generateSurvey(anyString(), eq(userDescription));
+        verify(surveyGenerationService, times(1)).generateSurvey(eq(userDescription));
     }
 
 }

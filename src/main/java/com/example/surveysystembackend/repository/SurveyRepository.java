@@ -19,6 +19,5 @@ public interface SurveyRepository extends MongoRepository<Survey, String> {
     @Query(value = "{ 'deleted' : false }", count = true)
     long countByDeletedFalse();
 
-
 }
 

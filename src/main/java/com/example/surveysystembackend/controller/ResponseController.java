@@ -6,6 +6,7 @@ import com.example.surveysystembackend.service.response.ResponseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
@@ -31,6 +32,7 @@ public class ResponseController {
         return ResponseEntity.ok(createdResponse);
     }
 
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/{responseId}")
     public ResponseEntity<ResponseDTO> getResponseById(@PathVariable String responseId) {
         log.info("Fetching response by ID: {}", responseId);
@@ -44,6 +46,7 @@ public class ResponseController {
         }
     }
 
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/bySurvey/{surveyId}")
     public ResponseEntity<List<ResponseDTO>> getResponsesBySurveyId(@PathVariable String surveyId) {
         log.info("Fetching responses by survey ID: {}", surveyId);
@@ -57,6 +60,7 @@ public class ResponseController {
         }
     }
 
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/byUser/{userId}")
     public ResponseEntity<List<ResponseDTO>> getResponsesByUserId(@PathVariable String userId) {
         log.info("Fetching responses by user ID: {}", userId);
@@ -70,6 +74,7 @@ public class ResponseController {
         }
     }
 
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/byCurrentUser")
     public ResponseEntity<List<ResponseDTO>> getResponsesByCurrentUser() {
         String currentUserId = responseService.getCurrentUserId();

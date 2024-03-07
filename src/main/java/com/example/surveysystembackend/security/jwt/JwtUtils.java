@@ -33,7 +33,6 @@ public class JwtUtils {
                 .compact();
     }
 
-
     private Key key() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }

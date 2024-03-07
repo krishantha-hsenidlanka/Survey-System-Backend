@@ -35,7 +35,7 @@ public class UserService {
                 .map(user -> modelMapper.map(user, UserDTO.class));
     }
 
-        public boolean updateUserDetails(String userId, UserDTO updatedUser) {
+    public boolean updateUserDetails(String userId, UserDTO updatedUser) {
         return userRepository.findById(userId)
                 .map(user -> {
                     // Map individual fields excluding null values

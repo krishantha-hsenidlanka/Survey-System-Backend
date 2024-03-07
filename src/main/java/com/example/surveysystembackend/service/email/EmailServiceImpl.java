@@ -52,5 +52,4 @@ public class EmailServiceImpl implements EmailService {
         log.info("Sending verification email for {}", user.getEmail());
         javaMailSender.send(messagePreparator);
     }
-
 }

@@ -18,6 +18,7 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 @AllArgsConstructor
 public class UserController {
+
     private final UserService userService;
 
     @GetMapping("/")
@@ -42,7 +43,6 @@ public class UserController {
                 });
     }
 
-
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUserDetails(@PathVariable String userId, @Valid @RequestBody UserDTO updatedUser) {
         log.info("Updating user details for ID: {}", userId);
@@ -56,7 +56,6 @@ public class UserController {
         }
     }
 
-
     @PutMapping("/{userId}/status")
     public ResponseEntity<?> updateUserStatus(@PathVariable String userId, @RequestParam boolean enabled) {
         log.info("Updating user status for ID: {}", userId);
@@ -69,7 +68,6 @@ public class UserController {
             throw new EntityNotFoundException("User not found for ID: " + userId);
         }
     }
-
 
     @PutMapping("/{userId}/roles")
     public ResponseEntity<?> updateRoles(@PathVariable String userId, @RequestBody List<String> userRoles) {
