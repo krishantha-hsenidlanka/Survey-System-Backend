@@ -33,8 +33,5 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         logger.info("User loaded from database: " , user);
 
         return UserDetailsImpl.build(user);
-
     }
-
-
 }

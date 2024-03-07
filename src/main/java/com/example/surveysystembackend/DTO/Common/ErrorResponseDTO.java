@@ -1,4 +1,4 @@
-package com.example.surveysystembackend.DTO;
+package com.example.surveysystembackend.DTO.Common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;

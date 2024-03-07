@@ -1,7 +1,7 @@
 package com.example.surveysystembackend.security.jwt;
 
 
-import com.example.surveysystembackend.DTO.ErrorResponseDTO;
+import com.example.surveysystembackend.DTO.Common.ErrorResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,6 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthEntryPointJwt.class);
 
-
     private final ObjectMapper objectMapper;
 
     public AuthEntryPointJwt(ObjectMapper objectMapper) {
@@ -37,11 +36,8 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
                 authException.getMessage(),
                 request.getRequestURI()
         );
-
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-
     }
-
 }

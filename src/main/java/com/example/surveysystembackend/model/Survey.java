@@ -21,7 +21,8 @@ public class Survey {
     @Id
     private String id;
     private String title;
-    private List<Question> questions;
+    private String description;
+    private List<Page> pages;
     private String ownerId;
     private Set<String> editAccessUserIds = new HashSet<>();
     private boolean isPublic;

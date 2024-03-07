@@ -9,15 +9,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document(collection = "responses")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Document(collection = "responses")
 public class Response {
     @Id
     private String id;
     private String userId;
     private String surveyId;
-    private List<Answer> Answers;
+    private List<Object> answers;
 }

@@ -11,5 +11,4 @@ public interface ResponseRepository extends MongoRepository<Response, String> {
     List<Response> findBySurveyId(String surveyId);
     List<Response> findByUserId(String userId);
 
-
 }

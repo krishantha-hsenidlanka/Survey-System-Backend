@@ -1,7 +1,6 @@
 package com.example.surveysystembackend.service.response;
 
-import com.example.surveysystembackend.DTO.ResponseDTO;
-import com.example.surveysystembackend.model.Answer;
+import com.example.surveysystembackend.DTO.Response.ResponseDTO;
 import com.example.surveysystembackend.model.Response;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.ResponseRepository;
@@ -13,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,31 +33,21 @@ public class ResponseServiceImpl implements ResponseService {
         this.surveyRepository = surveyRepository;
     }
 
-
     @Override
     public ResponseDTO createResponse(ResponseDTO responseDTO) {
-        // Map ResponseDTO to Response entity
         Response response = modelMapper.map(responseDTO, Response.class);
-
-        // Get the current logged-in user's ID
         String userId = getCurrentUserId();
         response.setUserId(userId);
-
-        // Ensure new response has null id before saving
         response.setId(null);
 
-        // Validate survey ID and question IDs
         if (!isValidSurveyAndQuestions(response.getSurveyId(), response.getAnswers())) {
             throw new IllegalArgumentException("Invalid survey or question IDs or Deleted");
         }
 
-        // Save the response to the repository
         response = responseRepository.save(response);
 
         return modelMapper.map(response, ResponseDTO.class);
     }
-
-
 
     @Override
     public ResponseDTO getResponseById(String responseId) {
@@ -72,7 +62,6 @@ public class ResponseServiceImpl implements ResponseService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public List<ResponseDTO> getResponsesByUserId(String userId) {
         List<Response> responsesByUserId = responseRepository.findByUserId(userId);
@@ -80,27 +69,38 @@ public class ResponseServiceImpl implements ResponseService {
                 .map(response -> modelMapper.map(response, ResponseDTO.class))
                 .collect(Collectors.toList());
     }
-    private boolean isValidSurveyAndQuestions(String surveyId, List<Answer> answers) {
+
+    private boolean isValidSurveyAndQuestions(String surveyId, List<Object> answers) {
         Optional<Survey> surveyOptional = surveyRepository.findById(surveyId);
 
         if (surveyOptional.isPresent()) {
             Survey survey = surveyOptional.get();
 
-            // Validate survey ID
             if (survey.isDeleted()) {
-                return false;  // Survey is marked as deleted
+                return false;
             }
 
-            // Validate question IDs
+            // Validate element names
             return answers.stream()
-                    .allMatch(answer -> survey.getQuestions().stream()
-                            .anyMatch(question -> question.getId().equals(answer.getQuestionId())));
-        }
+                    .allMatch(answer -> {
+                        if (answer instanceof Map) {
+                            Map<?, ?> answerMap = (Map<?, ?>) answer;
 
+                            // Check if all keys are valid element names
+                            return answerMap.keySet().stream()
+                                    .allMatch(elementName ->
+                                            survey.getPages().stream()
+                                                    .flatMap(page -> page.getElements().stream())
+                                                    .anyMatch(element -> element.getName().equals(elementName.toString()))
+                                    );
+                        }
+                        return false;
+                    });
+        }
         return false;
     }
 
-    private String getCurrentUserId() {
+    public String getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (principal instanceof UserDetails) {
@@ -109,5 +109,4 @@ public class ResponseServiceImpl implements ResponseService {
             return "guest";
         }
     }
-
 }

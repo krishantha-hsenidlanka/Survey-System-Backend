@@ -1,17 +1,25 @@
 package com.example.surveysystembackend.service.survey;
 
-import com.example.surveysystembackend.DTO.SurveyDTO;
-import com.example.surveysystembackend.model.Question;
+import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
+import com.example.surveysystembackend.exception.CustomRuntimeException;
+import com.example.surveysystembackend.model.Element;
+import com.example.surveysystembackend.model.Page;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.SurveyRepository;
-import com.example.surveysystembackend.service.user.UserDetailsServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.nio.file.AccessDeniedException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,110 +31,154 @@ public class SurveyServiceImpl implements SurveyService {
     private final ModelMapper modelMapper;
 
     @Autowired
-    public SurveyServiceImpl(SurveyRepository surveyRepository, ModelMapper modelMapper) {
+    public SurveyServiceImpl(SurveyRepository surveyRepository, ModelMapper modelMapper, RestTemplate restTemplate) {
         this.surveyRepository = surveyRepository;
         this.modelMapper = modelMapper;
     }
 
     @Override
     public SurveyDTO createSurvey(SurveyDTO surveyDTO) {
-        // Map SurveyDTO to Survey entity
+        log.info("Creating survey: {}", surveyDTO);
         Survey survey = modelMapper.map(surveyDTO, Survey.class);
 
-        // Map QuestionDTOs to Question entities with unique identifiers
-        List<Question> questions = modelMapper.map(surveyDTO.getQuestions(), new TypeToken<List<Question>>() {}.getType());
+        // Map Questions to Element entities
+        List<Element> elements = surveyDTO.getPages().stream()
+                .flatMap(pageDTO -> pageDTO.getElements().stream()
+                        .map(elementDTO -> {
+                            if (elementDTO != null) {
+                                Element element = modelMapper.map(elementDTO, Element.class);
+                                if (elementDTO.getChoices() != null) {
+                                    element.setChoices(elementDTO.getChoices());
+                                }
+                                element.setId(UUID.randomUUID().toString());
+                                return element;
+                            }
+                            return null; // elementDTO is null
+                        })
+                )
+                .filter(Objects::nonNull) // Remove any null elements
+                .collect(Collectors.toList());
 
-        // Ensure each question has a unique identifier
-        questions.forEach(question -> question.setId(UUID.randomUUID().toString()));
+        // Set the elements in the survey entity
+        survey.setPages(surveyDTO.getPages().stream()
+                .map(pageDTO -> {
+                    Page page = modelMapper.map(pageDTO, Page.class);
+                    page.setElements(elements);
+                    return page;
+                })
+                .collect(Collectors.toList()));
 
-        // Set the questions in the survey entity
-        survey.setQuestions(questions);
-
-        // Set the owner ID from the currently authenticated user
         String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
         survey.setOwnerId(ownerId);
 
-        // Initialize the list if it's not provided in the SurveyDTO
-        if (questions != null) {
-            survey.setQuestions(questions);
+        // Initialize the list if it's not provided
+        if (elements != null) {
+            survey.setPages(surveyDTO.getPages().stream()
+                    .map(pageDTO -> modelMapper.map(pageDTO, Page.class))
+                    .collect(Collectors.toList()));
         } else {
-            survey.setQuestions(new ArrayList<>());
+            survey.setPages(new ArrayList<>());
         }
 
-        // Save the survey to the repository
         survey.setId(null);
         survey = surveyRepository.save(survey);
+        log.info("Survey created: {}", survey);
 
-        // Map the saved survey entity back to a SurveyDTO for response
         return modelMapper.map(survey, SurveyDTO.class);
     }
+
     @Override
-    public SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) {
-        // Check if the survey exists
+    public SurveyDTO editSurvey(String surveyId, SurveyDTO updatedSurveyDTO) throws AccessDeniedException {
+        // Check survey exists
         Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
         if (optionalSurvey.isEmpty()) {
-            // Survey not found
             return null;
         }
 
-        // Map updated survey data to the existing survey entity
         Survey existingSurvey = optionalSurvey.get();
 
-        // Retrieve the existing owner ID and edit access user IDs
         String ownerId = existingSurvey.getOwnerId();
         Set<String> editAccessUserIds = existingSurvey.getEditAccessUserIds();
 
-        // Get the authenticated user ID
+        // Authenticated username
         String authenticatedUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        // Check if the authenticated user has permission to edit the survey
-        if (!ownerId.equals(authenticatedUserId) && !((Set<?>) editAccessUserIds).contains(authenticatedUserId)) {
+        // Check permission
+        if (!ownerId.equals(authenticatedUserId) && !editAccessUserIds.contains(authenticatedUserId)) {
             log.warn("Permission denied to make changes of the survey");
-            // Unauthorized
-            return null;
+            throw new AccessDeniedException("Permission denied to make changes of the survey");
         }
 
-        // Set the owner ID in the updated survey DTO
         updatedSurveyDTO.setOwnerId(ownerId);
 
-        // Map updated survey DTO to the existing survey entity
         modelMapper.map(updatedSurveyDTO, existingSurvey);
 
-        // Map updated QuestionDTOs to Question entities with unique identifiers
-        List<Question> updatedQuestions = modelMapper.map(updatedSurveyDTO.getQuestions(), new TypeToken<List<Question>>() {}.getType());
-        if (updatedQuestions != null) {
-            // Ensure each updated question has a unique identifier
-            updatedQuestions.forEach(question -> {
-                if (question.getId() == null) {
-                    question.setId(UUID.randomUUID().toString());
-                }
-            });
-            existingSurvey.setQuestions(updatedQuestions);
-        } else {
-            // If no questions provided in the updated survey, set it to an empty list
-            existingSurvey.setQuestions(new ArrayList<>());
-        }
+        // Map updated Questions
+        List<Page> updatedPages = updatedSurveyDTO.getPages().stream()
+                .map(pageDTO -> {
+                    Page page = modelMapper.map(pageDTO, Page.class);
 
-        // Save the updated survey to the repository
+                    List<Element> updatedElements = pageDTO.getElements().stream()
+                            .filter(elementDTO -> elementDTO != null) // Filter null
+                            .map(elementDTO -> {
+                                Element element = modelMapper.map(elementDTO, Element.class);
+                                if (elementDTO.getChoices() != null) {
+                                    element.setChoices(elementDTO.getChoices());
+                                }
+                                element.setId(UUID.randomUUID().toString());
+                                return element;
+                            })
+                            .collect(Collectors.toList());
+
+                    page.setElements(updatedElements);
+                    return page;
+                })
+                .collect(Collectors.toList());
+
+        existingSurvey.setPages(updatedPages);
+
         existingSurvey.setId(surveyId);
         existingSurvey = surveyRepository.save(existingSurvey);
 
-        // Map the updated survey entity back to a SurveyDTO for response
         return modelMapper.map(existingSurvey, SurveyDTO.class);
     }
 
-
     @Override
     public SurveyDTO getSurveyById(String surveyId) {
-        return surveyRepository.findById(surveyId)
-                .map(survey -> modelMapper.map(survey, SurveyDTO.class))
-                .orElse(null);
-    }
+        Optional<Survey> optionalSurvey = surveyRepository.findById(surveyId);
+        return optionalSurvey.map(survey -> {
+            String authenticatedUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+            boolean isOwnerOrHasEditAccess = authenticatedUserId.equals(survey.getOwnerId()) ||
+                    survey.getEditAccessUserIds().contains(authenticatedUserId);
 
+            Collection<SimpleGrantedAuthority> authorities = (Collection<SimpleGrantedAuthority>)
+                    SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+            boolean isAdmin = authorities.stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+            if (survey.isPublic() || isOwnerOrHasEditAccess || isAdmin) {
+                return modelMapper.map(survey, SurveyDTO.class);
+            } else {
+                log.warn("Permission denied to view the survey");
+                throw new CustomRuntimeException("Permission denied to view the survey", HttpStatus.FORBIDDEN);
+            }
+        }).orElse(null);
+    }
 
     @Override
     public List<SurveyDTO> getSurveysByOwnerId(String ownerId) {
-        List<Survey> surveysByOwnerId = surveyRepository.findByOwnerId(ownerId);
+        List<Survey> surveysByOwnerId = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId);
+        return surveysByOwnerId.stream()
+                .map(survey -> modelMapper.map(survey, SurveyDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SurveyDTO> getSurveysForLoggedInUser() {
+        // Get the authenticated user ID
+        String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        List<Survey> surveysByOwnerId = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId);
         return surveysByOwnerId.stream()
                 .map(survey -> modelMapper.map(survey, SurveyDTO.class))
                 .collect(Collectors.toList());
@@ -149,15 +201,12 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         Survey survey = optionalSurvey.get();
-        // Set the survey status to "deleted" or handle deletion logic based on your requirements
+        // Survey status to "deleted"
         survey.setDeleted(true);
 
-        // Save the updated survey to the repository
         surveyRepository.save(survey);
 
         return true;
     }
-
-
 
 }
