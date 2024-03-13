@@ -62,147 +62,195 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> authenticateUser(LoginRequestDTO loginRequest) {
         log.info("Attempting to authenticate user: {}", loginRequest.getUsername());
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String jwt = jwtUtils.generateJwtToken(authentication);
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+            String jwt = jwtUtils.generateJwtToken(authentication);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
 
-        JwtResponseDTO responseDTO = JwtResponseDTO.builder()
-                .token(jwt)
-                .id(userDetails.getId())
-                .username(userDetails.getUsername())
-                .email(userDetails.getEmail())
-                .roles(roles)
-                .type("Bearer")
-                .build();
-        log.info("User authenticated successfully: {}", userDetails.getUsername());
-        return ResponseEntity.ok(responseDTO);
+            JwtResponseDTO responseDTO = JwtResponseDTO.builder()
+                    .token(jwt)
+                    .id(userDetails.getId())
+                    .username(userDetails.getUsername())
+                    .email(userDetails.getEmail())
+                    .roles(roles)
+                    .type("Bearer")
+                    .build();
+            log.info("User authenticated successfully: {}", userDetails.getUsername());
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            log.error("Error during user authentication: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Authentication failed", HttpStatus.UNAUTHORIZED);
+        }
     }
 
     @Override
     public ResponseEntity<?> registerUser(SignupRequestDTO signUpRequest) {
         log.info("Registering new user: {}", signUpRequest.getUsername());
 
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            log.error("Error: Username is already taken! Username: {}",signUpRequest.getUsername());
-            throw new CustomRuntimeException("Username is already taken! Username: "+ signUpRequest.getUsername(), HttpStatus.BAD_REQUEST );
+        try {
+            if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+                log.error("Error: Username is already taken! Username: {}",signUpRequest.getUsername());
+                throw new CustomRuntimeException("Username is already taken! Username: "+ signUpRequest.getUsername(), HttpStatus.BAD_REQUEST );
+            }
+
+            if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+                log.error("Error: Email is already in use! Email: {}", signUpRequest.getEmail());
+                throw new CustomRuntimeException("Email is already in use! Email: "+ signUpRequest.getEmail(), HttpStatus.BAD_REQUEST );
+            }
+
+            if (isReservedUsername(signUpRequest.getUsername())) {
+                log.error("Error: Username is reserved! Username: {}", signUpRequest.getUsername());
+                throw new CustomRuntimeException("Username is reserved! Please choose a different username.", HttpStatus.BAD_REQUEST);
+            }
+
+            User user = User.builder()
+                    .username(signUpRequest.getUsername())
+                    .email(signUpRequest.getEmail())
+                    .password(encoder.encode(signUpRequest.getPassword()))
+                    .enabled(false)
+                    .registrationDate(new Date())
+                    .verificationToken(generateVerificationToken(signUpRequest))
+                    .verificationTokenExpirationDate(calculateExpirationDate())
+                    .build();
+
+            Set<String> strRoles = signUpRequest.getRoles();
+            Set<Role> roles = new HashSet<>();
+
+            if (strRoles == null) {
+                Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                roles.add(userRole);
+            } else {
+                strRoles.forEach(role -> {
+                    switch (role) {
+                        case "admin":
+                            Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                            roles.add(adminRole);
+                            break;
+
+                        default:
+                            Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                            roles.add(userRole);
+                    }
+                });
+            }
+
+            user.setRoles(roles);
+            userRepository.save(user);
+
+            emailService.sendVerificationEmail(user);
+
+            log.info("User registered successfully: {}", user.getUsername());
+
+            return ResponseEntity.ok(new String ("{\"message\":\"User registered successfully!\"}"));
+
+        } catch (CustomRuntimeException e) {
+            log.error("Registration error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during user registration: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Unexpected error during registration", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            log.error("Error: Email is already in use! Email: {}", signUpRequest.getEmail());
-            throw new CustomRuntimeException("Email is already in use! Email: "+ signUpRequest.getEmail(), HttpStatus.BAD_REQUEST );
-        }
-
-        if (isReservedUsername(signUpRequest.getUsername())) {
-            log.error("Error: Username is reserved! Username: {}", signUpRequest.getUsername());
-            throw new CustomRuntimeException("Username is reserved! Please choose a different username.", HttpStatus.BAD_REQUEST);
-        }
-
-        User user = User.builder()
-                .username(signUpRequest.getUsername())
-                .email(signUpRequest.getEmail())
-                .password(encoder.encode(signUpRequest.getPassword()))
-                .enabled(false)
-                .registrationDate(new Date())
-                .verificationToken(generateVerificationToken(signUpRequest))
-                .verificationTokenExpirationDate(calculateExpirationDate())
-                .build();
-
-        Set<String> strRoles = signUpRequest.getRoles();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-                        break;
-
-                    default:
-                        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
-                }
-            });
-        }
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        emailService.sendVerificationEmail(user);
-
-        log.info("User registered successfully: {}", user.getUsername());
-
-        return ResponseEntity.ok(new String ("{\"message\":\"User registered successfully!\"}"));
     }
 
     @Override
     public ResponseEntity<?> changePassword(ChangePasswordRequestDTO changePasswordRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        log.info("Attempting to Change password for user");
 
-        User user = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        log.info("Changing password for user: {}", user.getUsername());
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
-            log.error("Error: Current password is incorrect, user: {}", user.getUsername());
-            throw new CustomRuntimeException("Current password is incorrect", HttpStatus.BAD_REQUEST);
+            User user = userRepository.findById(userDetails.getId())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            log.info("Changing password for user: {}", user.getUsername());
+
+            if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
+                log.error("Error: Current password is incorrect, user: {}", user.getUsername());
+                throw new CustomRuntimeException("Current password is incorrect", HttpStatus.BAD_REQUEST);
+            }
+
+            user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+            userRepository.save(user);
+
+            log.info("Password changed successfully for user: {}", userDetails.getUsername());
+            return ResponseEntity.ok(new String("{\"message\":\"Password changed successfully\"}"));
+        } catch (CustomRuntimeException e) {
+            log.error("Password change error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during password change: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Unexpected error during password change", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
-        userRepository.save(user);
-
-        log.info("Password changed successfully for user: {}", userDetails.getUsername());
-        return ResponseEntity.ok(new String("{\"message\":\"Password changed successfully\"}"));
     }
 
     @Override
     public ResponseEntity<?> getUserDetails() {
-        log.info("Fetching user details");
+        log.info("Attempting to fetch user details");
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.info(String.valueOf(authentication.getName()));
-        if (authentication == null || !authentication.isAuthenticated() || Objects.equals(authentication.getName(), "anonymousUser")) {
-            log.error("Unauthorized access to user details");
-            throw new CustomRuntimeException("Unauthorized access to user details", HttpStatus.UNAUTHORIZED);
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            log.info(String.valueOf(authentication.getName()));
+            if (authentication == null || !authentication.isAuthenticated() || Objects.equals(authentication.getName(), "anonymousUser")) {
+                log.error("Unauthorized access to user details");
+                throw new CustomRuntimeException("Unauthorized access to user details", HttpStatus.UNAUTHORIZED);
+            }
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+            User user = userRepository.findById(userDetails.getId())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+
+            log.info("User details fetched successfully: {}", userDetails.getUsername());
+            return ResponseEntity.ok(userDTO);
+        } catch (CustomRuntimeException e) {
+            log.error("User details retrieval error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during user details retrieval: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Unexpected error during user details retrieval", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        User user = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
-
-        log.info("User details fetched successfully: {}", userDetails.getUsername());
-        return ResponseEntity.ok(userDTO);
     }
+
     @Override
     public boolean verifyUser(String token) {
-        Optional<User> optionalUser = userRepository.findByVerificationToken(token);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+        log.info("Attempt to Verify user with token: {}", token);
+
+        try {
+            User user = userRepository.findByVerificationToken(token)
+                    .orElseThrow(() -> {
+                        log.error("User verification error, token: {}", token);
+                        throw new CustomRuntimeException("Invalid or expired verification token.", HttpStatus.NOT_FOUND);
+                    });
+
             if (user.getVerificationTokenExpirationDate().after(new Date())) {
                 user.setEnabled(true);
                 user.setVerificationToken(null);
                 user.setVerificationTokenExpirationDate(null);
                 userRepository.save(user);
+                log.info("User verified successfully! user {}", user.getUsername());
                 return true;
+            } else {
+                log.warn("Verification token expired for user: {}", user.getUsername());
+                throw new CustomRuntimeException("Verification token expired", HttpStatus.BAD_REQUEST);
             }
+        } catch (CustomRuntimeException e) {
+            log.error("User verification error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during user verification: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Unexpected error during user verification", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return false;
     }
 
     private boolean isReservedUsername(String username) {

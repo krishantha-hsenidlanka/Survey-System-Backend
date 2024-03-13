@@ -53,7 +53,7 @@ class UserControllerTest {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(userId);
 
-        when(userService.getUserById(userId)).thenReturn(java.util.Optional.of(userDTO));
+        when(userService.getUserById(userId)).thenReturn(userDTO);
 
         // Act
         ResponseEntity<UserDTO> responseEntity = userController.getUserById(userId);

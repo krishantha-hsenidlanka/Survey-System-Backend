@@ -41,7 +41,7 @@ class ResponseControllerTest {
         when(responseService.createResponse(any())).thenReturn(responseDTO);
 
         // Act
-        ResponseEntity<Object> responseEntity = responseController.createResponse(responseDTO);
+        ResponseEntity<ResponseDTO> responseEntity = responseController.createResponse(responseDTO);
 
         // Assert
         assertEquals(ResponseEntity.ok(responseDTO), responseEntity);
@@ -105,23 +105,6 @@ class ResponseControllerTest {
         assertEquals(ResponseEntity.ok(responseDTOs), responseEntity);
         log.info("Test Get Responses By User ID - ResponseDTOs: {}", responseDTOs);
         log.info("Test Get Responses By User ID - Response: {}", responseEntity);
-        verify(responseService, times(1)).getResponsesByUserId(userId);
-    }
-
-    @Test
-    void testGetResponsesByUserId_NoResponsesFound() {
-        log.info("Setting up test for Get Responses By User ID - No Responses Found");
-        // Arrange
-        String userId = "102";
-
-        when(responseService.getResponsesByUserId(userId)).thenReturn(Collections.emptyList());
-
-        // Act and Assert
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
-                () -> responseController.getResponsesByUserId(userId));
-        assertEquals("No responses found for user ID: " + userId, exception.getMessage());
-
-        log.info("Test Get Responses By User ID - No Responses Found - Exception Message: {}", exception.getMessage());
         verify(responseService, times(1)).getResponsesByUserId(userId);
     }
 }

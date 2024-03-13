@@ -23,7 +23,7 @@ public class UserController {
 
     @GetMapping("/")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
-        log.info("Fetching all users");
+        log.info("API hit: GET /api/users");
         List<UserDTO> users = userService.getAllUsers();
         log.info("All users fetched successfully");
         return ResponseEntity.ok(users);
@@ -31,24 +31,18 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {
-        log.info("Fetching user by ID: {}", userId);
-        return userService.getUserById(userId)
-                .map(userDTO -> {
-                    log.info("User found successfully");
-                    return ResponseEntity.ok(userDTO);
-                })
-                .orElseThrow(() -> {
-                    log.warn("User not found for ID: {}", userId);
-                    return new EntityNotFoundException("User not found for ID: " + userId);
-                });
+        log.info("API hit: GET /api/users/{}", userId);
+        UserDTO user = userService.getUserById(userId);
+        log.info("User fetched successfully for ID: {}", userId);
+        return ResponseEntity.ok(user);
     }
 
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUserDetails(@PathVariable String userId, @Valid @RequestBody UserDTO updatedUser) {
-        log.info("Updating user details for ID: {}", userId);
+        log.info("API hit: PUT /api/users/{}", userId);
         boolean success = userService.updateUserDetails(userId, updatedUser);
         if (success) {
-            log.info("User details updated successfully");
+            log.info("User details updated successfully for ID: {}", userId);
             return ResponseEntity.ok("{\"message\":\"User details updated successfully!\"}");
         } else {
             log.warn("User not found for ID: {}", userId);
@@ -58,7 +52,7 @@ public class UserController {
 
     @PutMapping("/{userId}/status")
     public ResponseEntity<?> updateUserStatus(@PathVariable String userId, @RequestParam boolean enabled) {
-        log.info("Updating user status for ID: {}", userId);
+        log.info("API hit: PUT /api/users/{}/status", userId);
         boolean success = userService.updateUserStatus(userId, enabled);
         if (success) {
             log.info("User status updated successfully for ID: {}", userId);
@@ -71,7 +65,7 @@ public class UserController {
 
     @PutMapping("/{userId}/roles")
     public ResponseEntity<?> updateRoles(@PathVariable String userId, @RequestBody List<String> userRoles) {
-        log.info("Updating user roles for ID: {}", userId);
+        log.info("API hit: PUT /api/users/{}/roles", userId);
         boolean success = userService.updateRoles(userId, userRoles);
         if (success) {
             log.info("User roles updated successfully for ID: {}", userId);

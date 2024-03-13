@@ -1,10 +1,10 @@
 package com.example.surveysystembackend.service.user;
 
-
 import com.example.surveysystembackend.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -45,6 +46,7 @@ public class UserDetailsImpl implements UserDetails {
         return enabled;
     }
     public static UserDetailsImpl build(User user) {
+        log.info("Building UserDetailsImpl for user: {}", user.getUsername());
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName().name()))
                 .collect(Collectors.toList());

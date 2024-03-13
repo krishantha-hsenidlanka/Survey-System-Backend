@@ -1,6 +1,7 @@
 package com.example.surveysystembackend.controller;
 
 import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
+import com.example.surveysystembackend.exception.CustomRuntimeException;
 import com.example.surveysystembackend.service.survey.SurveyGenerationService;
 import com.example.surveysystembackend.service.survey.SurveyService;
 import jakarta.validation.Valid;
@@ -31,93 +32,56 @@ public class SurveyController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> createSurvey(@RequestBody @Valid SurveyDTO surveyDTO, BindingResult bindingResult) {
-        log.info("Creating survey");
+    public ResponseEntity<SurveyDTO> createSurvey(@RequestBody @Valid SurveyDTO surveyDTO, BindingResult bindingResult) {
+        log.info("API hit: POST /api/surveys");
         if (bindingResult.hasErrors()) {
-            log.error("Validation errors: {}", bindingResult.getAllErrors());
             throw new ValidationException("Validation errors: " + bindingResult.getAllErrors());
         }
-        SurveyDTO createdSurvey = surveyService.createSurvey(surveyDTO);
-        log.info("Survey created successfully: {}", createdSurvey);
-        return ResponseEntity.ok(createdSurvey);
+        return ResponseEntity.ok(surveyService.createSurvey(surveyDTO));
     }
 
     @GetMapping("/{surveyId}")
     public ResponseEntity<SurveyDTO> getSurveyById(@PathVariable String surveyId) {
-        log.info("Fetching survey by ID: {}", surveyId);
-        SurveyDTO surveyDTO = surveyService.getSurveyById(surveyId);
-        if (surveyDTO != null) {
-            log.info("Survey found successfully");
-            return ResponseEntity.ok(surveyDTO);
-        } else {
-            log.warn("Survey not found for ID: {}", surveyId);
-            throw new EntityNotFoundException("Survey not found for ID: "+ surveyId);
-        }
+        log.info("API hit: GET /api/surveys/{}", surveyId);
+        return ResponseEntity.ok(surveyService.getSurveyById(surveyId));
     }
 
     @PutMapping("/{surveyId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<SurveyDTO> editSurvey(@PathVariable String surveyId, @RequestBody SurveyDTO updatedSurveyDTO) throws AccessDeniedException {
-        log.info("Editing survey with ID: {}", surveyId);
-        SurveyDTO editedSurvey = surveyService.editSurvey(surveyId, updatedSurveyDTO);
-        if (editedSurvey != null) {
-            log.info("Survey edited successfully");
-            return ResponseEntity.ok(editedSurvey);
-        } else {
-            log.warn("Survey not found for ID: {}", surveyId);
-            throw new EntityNotFoundException("Survey not found for ID: "+ surveyId);
-        }
+        log.info("API hit: PUT /api/surveys/{}", surveyId);
+        return ResponseEntity.ok(surveyService.editSurvey(surveyId, updatedSurveyDTO));
     }
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<List<SurveyDTO>> getSurveysForLoggedInUser() {
-        log.info("Fetching surveys for logged-in user");
-        List<SurveyDTO> surveysForLoggedInUser = surveyService.getSurveysForLoggedInUser();
-        if (surveysForLoggedInUser.isEmpty()) {
-            log.warn("No surveys found for logged-in user");
-            throw new EntityNotFoundException("No surveys found for the logged-in user");
-        }
-        log.info("Surveys fetched successfully for logged-in user");
-        return ResponseEntity.ok(surveysForLoggedInUser);
+        log.info("API hit: GET /api/surveys/user");
+        return ResponseEntity.ok(surveyService.getSurveysForLoggedInUser());
     }
 
     @GetMapping("/owner/{ownerId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SurveyDTO>> getSurveysByOwnerId(@PathVariable String ownerId) {
-        log.info("Fetching surveys by owner ID: {}", ownerId);
-        List<SurveyDTO> surveysByOwnerId = surveyService.getSurveysByOwnerId(ownerId);
-        if (surveysByOwnerId.isEmpty()) {
-            log.warn("No surveys found for owner ID: {}", ownerId);
-            throw new EntityNotFoundException("No surveys found for owner ID: " + ownerId);
-        }
-        log.info("Surveys fetched successfully by owner ID: {}", ownerId);
-        return ResponseEntity.ok(surveysByOwnerId);
+        log.info("API hit: GET /api/surveys/owner/{}", ownerId);
+        return ResponseEntity.ok(surveyService.getSurveysByOwnerId(ownerId));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SurveyDTO>> getAllSurveys() {
-        log.info("Fetching all surveys");
-        List<SurveyDTO> allSurveys = surveyService.getAllSurveys();
-        if (allSurveys.isEmpty()) {
-            log.warn("No surveys found");
-            throw new EntityNotFoundException("No surveys found");
-        }
-        log.info("All surveys fetched successfully");
-        return ResponseEntity.ok(allSurveys);
+        log.info("API hit: GET /api/surveys");
+        return ResponseEntity.ok(surveyService.getAllSurveys());
     }
 
     @DeleteMapping("/{surveyId}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<String> deleteSurvey(@PathVariable String surveyId) {
-        log.info("Deleting survey with ID: {}", surveyId);
+        log.info("API hit: DELETE /api/surveys/{}", surveyId);
         boolean deleted = surveyService.deleteSurvey(surveyId);
         if (deleted) {
-            log.info("Survey deleted successfully");
             return ResponseEntity.ok("{\"message\":\"Survey deleted successfully\"}");
         } else {
-            log.warn("Survey not found or already deleted for ID: {}", surveyId);
             throw new EntityNotFoundException("Survey not found or already deleted for ID: " + surveyId);
         }
     }
@@ -125,14 +89,14 @@ public class SurveyController {
     @PostMapping("/generate-survey")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<SurveyDTO> generateSurvey(@RequestBody String userDescription) {
-        log.info("Generating survey based on user description");
+        log.info("API hit: POST /api/surveys/generate-survey");
         SurveyDTO generatedSurvey = surveyGenerationService.generateSurvey(userDescription);
         if (generatedSurvey != null) {
             log.info("Survey generated successfully");
             return ResponseEntity.ok(generatedSurvey);
         } else {
             log.error("Error generating survey");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            throw new CustomRuntimeException("Error generating survey", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -33,16 +33,21 @@ public class SurveyGenerationService {
     }
 
     public SurveyDTO generateSurvey(String userDescription) {
+        try{
+            log.info("Attempting to generate survey, user description: {}", userDescription);
+            String combinedJson = combineJsonWithDescription(getDefaultSurveyJson(), userDescription);
+            Map<String, Object> requestBody = createRequestBody(combinedJson);
+            String requestJson = convertRequestBodyToJson(requestBody);
+            ResponseEntity<String> responseEntity = makeHttpPostRequest(requestJson);
+            String extractedText = extractTextFromResponse(responseEntity);
+            SurveyDTO generatedSurveyDTO = convertJsonToSurveyDTO(extractedText);
+            SurveyDTO savedSurveyDTO = saveSurveyToDatabase(generatedSurveyDTO);
 
-        String combinedJson = combineJsonWithDescription(getDefaultSurveyJson(), userDescription);
-        Map<String, Object> requestBody = createRequestBody(combinedJson);
-        String requestJson = convertRequestBodyToJson(requestBody);
-        ResponseEntity<String> responseEntity = makeHttpPostRequest(requestJson);
-        String extractedText = extractTextFromResponse(responseEntity);
-        SurveyDTO generatedSurveyDTO = convertJsonToSurveyDTO(extractedText);
-        SurveyDTO savedSurveyDTO = saveSurveyToDatabase(generatedSurveyDTO);
-
-        return savedSurveyDTO;
+            return savedSurveyDTO;
+        } catch (Exception e) {
+            log.error("Error generating survey: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Error generating survey", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private String combineJsonWithDescription(String surveyJson, String userDescription) {
@@ -121,10 +126,15 @@ public class SurveyGenerationService {
     }
 
     private ResponseEntity<String> makeHttpPostRequest(String requestJson) {
-        HttpHeaders headers = createHttpHeaders();
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
-        String urlWithApiKey = apiUrl + "?key=" + apiKey;
-        return restTemplate.postForEntity(urlWithApiKey, requestEntity, String.class);
+        try {
+            HttpHeaders headers = createHttpHeaders();
+            HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
+            String urlWithApiKey = apiUrl + "?key=" + apiKey;
+            return restTemplate.postForEntity(urlWithApiKey, requestEntity, String.class);
+        } catch (Exception e) {
+            log.error("Error making HTTP POST request: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Error making HTTP POST request", HttpStatus.BAD_REQUEST);
+        }
     }
 
     private String extractTextFromResponse(ResponseEntity<String> responseEntity) {
@@ -144,6 +154,7 @@ public class SurveyGenerationService {
 
             return jsonNode.asText();
         } catch (JsonProcessingException | NullPointerException e) {
+            log.error("Error extracting text from response: {}", e.getMessage(), e);
             throw new CustomRuntimeException(e.getMessage(),HttpStatus.BAD_REQUEST);
         }
     }
@@ -164,9 +175,14 @@ public class SurveyGenerationService {
     }
 
     private HttpHeaders createHttpHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return headers;
+        try{
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return headers;
+        } catch (Exception e) {
+            log.error("Error creating HTTP headers: {}", e.getMessage(), e);
+            throw new CustomRuntimeException("Error creating HTTP headers", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private String getDefaultSurveyJson() {
