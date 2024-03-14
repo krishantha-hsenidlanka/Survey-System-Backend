@@ -14,6 +14,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 
@@ -108,17 +112,21 @@ class SurveyControllerTest {
         // Arrange
         List<SurveyDTO> surveysForLoggedInUser = Collections.singletonList(new SurveyDTO());
 
-        when(surveyService.getSurveysForLoggedInUser()).thenReturn(surveysForLoggedInUser);
+        Pageable pageable = PageRequest.of(0, 10); // Page 0, size 10
+        Page<SurveyDTO> surveysPage = new PageImpl<>(surveysForLoggedInUser, pageable, surveysForLoggedInUser.size());
+
+        when(surveyService.getSurveysForLoggedInUser(eq(pageable))).thenReturn(surveysPage);
 
         // Act
         log.info("Calling getSurveysForLoggedInUser");
-        ResponseEntity<List<SurveyDTO>> responseEntity = surveyController.getSurveysForLoggedInUser();
+        ResponseEntity<Page<SurveyDTO>> responseEntity = surveyController.getSurveysForLoggedInUser(pageable);
 
         // Assert
         log.info("Asserting response for Get Surveys For Logged In User");
-        assertEquals(ResponseEntity.ok(surveysForLoggedInUser), responseEntity);
-        verify(surveyService, times(1)).getSurveysForLoggedInUser();
+        assertEquals(ResponseEntity.ok(surveysPage), responseEntity);
+        verify(surveyService, times(1)).getSurveysForLoggedInUser(eq(pageable));
     }
+
 
     @Test
     void testGetSurveysByOwnerId() {
@@ -127,16 +135,19 @@ class SurveyControllerTest {
         String ownerId = "456";
         List<SurveyDTO> surveysByOwnerId = Collections.singletonList(new SurveyDTO());
 
-        when(surveyService.getSurveysByOwnerId(ownerId)).thenReturn(surveysByOwnerId);
+        Pageable pageable = PageRequest.of(0, 10); // Page 0, size 10
+        Page<SurveyDTO> surveysPage = new PageImpl<>(surveysByOwnerId, pageable, surveysByOwnerId.size());
+
+        when(surveyService.getSurveysByOwnerId(ownerId, pageable)).thenReturn(surveysPage);
 
         // Act
         log.info("Calling getSurveysByOwnerId with ownerId: {}", ownerId);
-        ResponseEntity<List<SurveyDTO>> responseEntity = surveyController.getSurveysByOwnerId(ownerId);
+        ResponseEntity<Page<SurveyDTO>> responseEntity = surveyController.getSurveysByOwnerId(ownerId, pageable);
 
         // Assert
         log.info("Asserting response for Get Surveys By Owner Id");
-        assertEquals(ResponseEntity.ok(surveysByOwnerId), responseEntity);
-        verify(surveyService, times(1)).getSurveysByOwnerId(ownerId);
+        assertEquals(ResponseEntity.ok(surveysPage), responseEntity);
+        verify(surveyService, times(1)).getSurveysByOwnerId(ownerId, pageable);
     }
 
     @Test

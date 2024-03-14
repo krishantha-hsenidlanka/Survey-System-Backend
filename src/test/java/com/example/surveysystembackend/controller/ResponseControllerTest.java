@@ -9,6 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -95,16 +98,17 @@ class ResponseControllerTest {
         // Arrange
         String userId = "101";
         List<ResponseDTO> responseDTOs = Collections.singletonList(new ResponseDTO());
+        Page<ResponseDTO> responseDTOPage = new PageImpl<>(responseDTOs);
 
-        when(responseService.getResponsesByUserId(userId)).thenReturn(responseDTOs);
+        when(responseService.getResponsesByUserId(eq(userId), any(Pageable.class))).thenReturn(responseDTOPage);
 
         // Act
-        ResponseEntity<List<ResponseDTO>> responseEntity = responseController.getResponsesByUserId(userId);
+        ResponseEntity<Page<ResponseDTO>> responseEntity = responseController.getResponsesByUserId(userId, 0, 10);
 
         // Assert
-        assertEquals(ResponseEntity.ok(responseDTOs), responseEntity);
+        assertEquals(ResponseEntity.ok(responseDTOPage), responseEntity);
         log.info("Test Get Responses By User ID - ResponseDTOs: {}", responseDTOs);
         log.info("Test Get Responses By User ID - Response: {}", responseEntity);
-        verify(responseService, times(1)).getResponsesByUserId(userId);
+        verify(responseService, times(1)).getResponsesByUserId(eq(userId), any(Pageable.class));
     }
 }

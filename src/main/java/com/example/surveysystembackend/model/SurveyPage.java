@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Page {
+public class SurveyPage {
     private String name;
     private String title;
     private String description;

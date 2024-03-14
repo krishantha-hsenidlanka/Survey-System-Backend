@@ -4,6 +4,9 @@ import com.example.surveysystembackend.DTO.Common.ErrorResponseDTO;
 import com.example.surveysystembackend.DTO.Response.ResponseDTO;
 import com.example.surveysystembackend.service.response.ResponseService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,18 +52,23 @@ public class ResponseController {
 
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/byUser/{userId}")
-    public ResponseEntity<List<ResponseDTO>> getResponsesByUserId(@PathVariable String userId) {
+    public ResponseEntity<Page<ResponseDTO>> getResponsesByUserId(@PathVariable String userId,
+                                                                  @RequestParam(defaultValue = "0") int page,
+                                                                  @RequestParam(defaultValue = "10") int size) {
         log.info("API hit: GET /api/responses/byUser/{}", userId);
-        List<ResponseDTO> responsesByUserId = responseService.getResponsesByUserId(userId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ResponseDTO> responsesByUserId = responseService.getResponsesByUserId(userId, pageable);
         return ResponseEntity.ok(responsesByUserId);
     }
 
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/byCurrentUser")
-    public ResponseEntity<List<ResponseDTO>> getResponsesByCurrentUser() {
+    public ResponseEntity<Page<ResponseDTO>> getResponsesByCurrentUser(@RequestParam(defaultValue = "0") int page,
+                                                                       @RequestParam(defaultValue = "10") int size) {
         log.info("API hit: GET /api/responses/byCurrentUser");
         String currentUserId = responseService.getCurrentUserId();
-        List<ResponseDTO> responsesByCurrentUser = responseService.getResponsesByUserId(currentUserId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ResponseDTO> responsesByCurrentUser = responseService.getResponsesByUserId(currentUserId, pageable);
         return ResponseEntity.ok(responsesByCurrentUser);
     }
 }

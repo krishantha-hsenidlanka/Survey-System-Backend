@@ -22,7 +22,7 @@ public class Survey {
     private String id;
     private String title;
     private String description;
-    private List<Page> pages;
+    private List<SurveyPage> pages;
     private String ownerId;
     private Set<String> editAccessUserIds = new HashSet<>();
     private boolean isPublic;

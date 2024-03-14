@@ -3,16 +3,14 @@ package com.example.surveysystembackend.service.survey;
 import com.example.surveysystembackend.DTO.Survey.SurveyDTO;
 import com.example.surveysystembackend.exception.CustomRuntimeException;
 import com.example.surveysystembackend.model.Element;
-import com.example.surveysystembackend.model.Page;
+import com.example.surveysystembackend.model.SurveyPage;
 import com.example.surveysystembackend.model.Survey;
 import com.example.surveysystembackend.repository.SurveyRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -64,9 +62,9 @@ public class SurveyServiceImpl implements SurveyService {
             // Set the elements in the survey entity
             survey.setPages(surveyDTO.getPages().stream()
                     .map(pageDTO -> {
-                        Page page = modelMapper.map(pageDTO, Page.class);
-                        page.setElements(elements);
-                        return page;
+                        SurveyPage surveyPage = modelMapper.map(pageDTO, SurveyPage.class);
+                        surveyPage.setElements(elements);
+                        return surveyPage;
                     })
                     .collect(Collectors.toList()));
 
@@ -76,7 +74,7 @@ public class SurveyServiceImpl implements SurveyService {
             // Initialize the list if it's not provided
             if (elements != null) {
                 survey.setPages(surveyDTO.getPages().stream()
-                        .map(pageDTO -> modelMapper.map(pageDTO, Page.class))
+                        .map(pageDTO -> modelMapper.map(pageDTO, SurveyPage.class))
                         .collect(Collectors.toList()));
             } else {
                 survey.setPages(new ArrayList<>());
@@ -118,9 +116,9 @@ public class SurveyServiceImpl implements SurveyService {
             modelMapper.map(updatedSurveyDTO, existingSurvey);
 
             // Map updated Questions
-            List<Page> updatedPages = updatedSurveyDTO.getPages().stream()
+            List<SurveyPage> updatedSurveyPages = updatedSurveyDTO.getPages().stream()
                     .map(pageDTO -> {
-                        Page page = modelMapper.map(pageDTO, Page.class);
+                        SurveyPage surveyPage = modelMapper.map(pageDTO, SurveyPage.class);
 
                         List<Element> updatedElements = pageDTO.getElements().stream()
                                 .filter(elementDTO -> elementDTO != null) // Filter null
@@ -134,12 +132,12 @@ public class SurveyServiceImpl implements SurveyService {
                                 })
                                 .collect(Collectors.toList());
 
-                        page.setElements(updatedElements);
-                        return page;
+                        surveyPage.setElements(updatedElements);
+                        return surveyPage;
                     })
                     .collect(Collectors.toList());
 
-            existingSurvey.setPages(updatedPages);
+            existingSurvey.setPages(updatedSurveyPages);
 
             existingSurvey.setId(surveyId);
             existingSurvey = surveyRepository.save(existingSurvey);
@@ -194,18 +192,16 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public List<SurveyDTO> getSurveysByOwnerId(String ownerId) {
+    public Page<SurveyDTO> getSurveysByOwnerId(String ownerId, Pageable pageable) {
         try {
             log.info("Attempting to get surveys by owner ID: {}", ownerId);
-            List<Survey> surveysByOwnerId = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId);
-            if (surveysByOwnerId.isEmpty()) {
+            Page<Survey> surveysPage = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId, pageable);
+            if (surveysPage.isEmpty()) {
                 log.warn("No surveys found for owner ID: {}", ownerId);
                 throw new EntityNotFoundException("No surveys found for owner ID: " + ownerId);
             }
             log.info("Surveys fetched successfully for owner ID: {}", ownerId);
-            return surveysByOwnerId.stream()
-                    .map(survey -> modelMapper.map(survey, SurveyDTO.class))
-                    .collect(Collectors.toList());
+            return surveysPage.map(survey -> modelMapper.map(survey, SurveyDTO.class));
         } catch (EntityNotFoundException e) {
             log.error("No surveys found for owner ID: {}", ownerId, e);
             throw e;
@@ -215,20 +211,19 @@ public class SurveyServiceImpl implements SurveyService {
         }
     }
 
+
     @Override
-    public List<SurveyDTO> getSurveysForLoggedInUser() {
+    public Page<SurveyDTO> getSurveysForLoggedInUser(Pageable pageable) {
         try {
             log.info("Attempting to get surveys for logged-in user");
             String ownerId = SecurityContextHolder.getContext().getAuthentication().getName();
-            List<Survey> surveysByOwnerId = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId);
-            if (surveysByOwnerId.isEmpty()) {
+            Page<Survey> surveysPage = surveyRepository.findByOwnerIdAndDeletedFalse(ownerId, pageable);
+            if (surveysPage.isEmpty()) {
                 log.warn("No surveys found for logged-in user ID: {}", ownerId);
                 throw new EntityNotFoundException("No surveys found for logged-in user ID: " + ownerId);
             }
             log.info("Surveys fetched successfully for logged-in user ID: {}", ownerId);
-            return surveysByOwnerId.stream()
-                    .map(survey -> modelMapper.map(survey, SurveyDTO.class))
-                    .collect(Collectors.toList());
+            return surveysPage.map(survey -> modelMapper.map(survey, SurveyDTO.class));
         } catch (EntityNotFoundException e) {
             log.error("No surveys found for logged-in user ID: {}", e.getMessage(), e);
             throw e;
@@ -237,6 +232,7 @@ public class SurveyServiceImpl implements SurveyService {
             throw new CustomRuntimeException("Error getting surveys for logged-in user", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @Override
     public List<SurveyDTO> getAllSurveys() {

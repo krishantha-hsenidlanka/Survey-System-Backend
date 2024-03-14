@@ -7,6 +7,8 @@ import com.example.surveysystembackend.service.survey.SurveyService;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,16 +57,16 @@ public class SurveyController {
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<SurveyDTO>> getSurveysForLoggedInUser() {
+    public ResponseEntity<Page<SurveyDTO>> getSurveysForLoggedInUser(Pageable pageable) {
         log.info("API hit: GET /api/surveys/user");
-        return ResponseEntity.ok(surveyService.getSurveysForLoggedInUser());
+        return ResponseEntity.ok(surveyService.getSurveysForLoggedInUser(pageable));
     }
 
     @GetMapping("/owner/{ownerId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<SurveyDTO>> getSurveysByOwnerId(@PathVariable String ownerId) {
+    public ResponseEntity<Page<SurveyDTO>> getSurveysByOwnerId(@PathVariable String ownerId, Pageable pageable) {
         log.info("API hit: GET /api/surveys/owner/{}", ownerId);
-        return ResponseEntity.ok(surveyService.getSurveysByOwnerId(ownerId));
+        return ResponseEntity.ok(surveyService.getSurveysByOwnerId(ownerId, pageable));
     }
 
     @GetMapping

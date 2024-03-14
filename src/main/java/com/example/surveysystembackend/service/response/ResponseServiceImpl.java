@@ -9,6 +9,8 @@ import com.example.surveysystembackend.repository.SurveyRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -106,19 +107,17 @@ public class ResponseServiceImpl implements ResponseService {
     }
 
     @Override
-    public List<ResponseDTO> getResponsesByUserId(String userId) {
+    public Page<ResponseDTO> getResponsesByUserId(String userId, Pageable pageable) {
         try {
             log.info("Attempting to get response by userId: {}", userId);
-            List<Response> responsesByUserId = responseRepository.findByUserId(userId);
+            Page<Response> responsesByUserId = responseRepository.findByUserId(userId, pageable);
 
             if (responsesByUserId.isEmpty()) {
                 log.warn("No responses found for userId: {}", userId);
                 throw new EntityNotFoundException("No responses found for userId: " + userId);
             }
             log.info("Responses found successfully for userId: {}", userId);
-            return responsesByUserId.stream()
-                    .map(response -> modelMapper.map(response, ResponseDTO.class))
-                    .collect(Collectors.toList());
+            return responsesByUserId.map(response -> modelMapper.map(response, ResponseDTO.class));
         } catch (EntityNotFoundException e) {
             log.warn("No responses found for userId: {}", userId);
             throw e;

@@ -2,6 +2,8 @@ package com.example.surveysystembackend.repository;
 
 import com.example.surveysystembackend.model.Response;
 import com.example.surveysystembackend.model.Survey;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -12,7 +14,7 @@ import java.util.List;
 public interface SurveyRepository extends MongoRepository<Survey, String> {
 
     List<Survey> findByOwnerId(String ownerId);
-    List<Survey> findByOwnerIdAndDeletedFalse(String ownerId);
+    Page<Survey> findByOwnerIdAndDeletedFalse(String ownerId, Pageable pageable);
     @Query(value = "{ 'deleted' : true }", count = true)
     long countByDeletedTrue();
 
