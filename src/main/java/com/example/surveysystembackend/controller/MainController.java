@@ -1,12 +1,13 @@
 package com.example.surveysystembackend.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-
+@Slf4j
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController@RequestMapping("/api/")
 public class MainController {
@@ -30,6 +31,7 @@ public class MainController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public String admin() {
+        log.info("API hit: GET /api/admin/dashboard-summary");
         return "{\"success\": true }";
     }
 }

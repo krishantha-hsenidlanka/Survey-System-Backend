@@ -48,4 +48,14 @@ public class AuthController {
         return authService.getUserDetails();
     }
 
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyUser(@RequestParam String token) {
+        log.info("API hit: /verify endpoint");
+        if (authService.verifyUser(token)) {
+            return ResponseEntity.ok("User verified successfully!");
+        } else {
+            throw new CustomRuntimeException("Invalid or expired verification token.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }
